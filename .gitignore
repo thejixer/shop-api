@@ -1,0 +1,5 @@
+.env
+/bin
+Dockerfile
+docker-compose.yaml
+.air.toml
