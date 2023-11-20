@@ -4,18 +4,18 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/thejixer/shop-api/database"
-	"github.com/thejixer/shop-api/mailer"
-	"github.com/thejixer/shop-api/redis"
+	"github.com/thejixer/shop-api/internal/mailer"
+	"github.com/thejixer/shop-api/internal/redis"
+	storage "github.com/thejixer/shop-api/internal/storage"
 )
 
 type HandlerService struct {
-	store         *database.PostgresStore
+	store         *storage.PostgresStore
 	redisStore    *redis.RedisStore
 	mailerService *mailer.MailerService
 }
 
-func NewHandlerService(store *database.PostgresStore, redisStore *redis.RedisStore, mailerService *mailer.MailerService) *HandlerService {
+func NewHandlerService(store *storage.PostgresStore, redisStore *redis.RedisStore, mailerService *mailer.MailerService) *HandlerService {
 	return &HandlerService{
 		store:         store,
 		redisStore:    redisStore,

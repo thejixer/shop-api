@@ -9,9 +9,10 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
-	dataprocesslayer "github.com/thejixer/shop-api/data-process-layer"
-	"github.com/thejixer/shop-api/models"
-	"github.com/thejixer/shop-api/utils"
+	dataprocesslayer "github.com/thejixer/shop-api/internal/data-process-layer"
+	"github.com/thejixer/shop-api/internal/models"
+	"github.com/thejixer/shop-api/internal/utils"
+	"github.com/thejixer/shop-api/pkg/encryption"
 )
 
 type CustomContext struct {
@@ -142,7 +143,7 @@ func (h *HandlerService) HandleLogin(c echo.Context) error {
 		return WriteReponse(&c, http.StatusBadRequest, "your email is not verified")
 	}
 
-	if match := utils.CheckPasswordHash(body.Password, thisUser.Password); !match {
+	if match := encryption.CheckPasswordHash(body.Password, thisUser.Password); !match {
 		return WriteReponse(&c, http.StatusBadRequest, "password doesnt match")
 	}
 

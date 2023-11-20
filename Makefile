@@ -1,8 +1,8 @@
 build:
-	@go build -o bin/shopapi
+	@go build -o cmd/bin/shopapi cmd/shop-api/main.go
 
 run: build
-	@./bin/shopapi
+	@./cmd/bin/shopapi
 
 test:
 	@go test -v ./..

@@ -1,7 +1,7 @@
 package dataprocesslayer
 
 import (
-	"github.com/thejixer/shop-api/models"
+	"github.com/thejixer/shop-api/internal/models"
 )
 
 func ConvertToUserDto(u *models.User) models.UserDto {

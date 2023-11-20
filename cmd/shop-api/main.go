@@ -7,11 +7,11 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
-	"github.com/thejixer/shop-api/database"
-	"github.com/thejixer/shop-api/handlers"
-	"github.com/thejixer/shop-api/mailer"
-	"github.com/thejixer/shop-api/redis"
-	"github.com/thejixer/shop-api/server"
+	"github.com/thejixer/shop-api/internal/handlers"
+	"github.com/thejixer/shop-api/internal/mailer"
+	"github.com/thejixer/shop-api/internal/redis"
+	"github.com/thejixer/shop-api/internal/server"
+	storage "github.com/thejixer/shop-api/internal/storage"
 )
 
 func init() {
@@ -29,7 +29,7 @@ func main() {
 
 	listenAddr := os.Getenv("LISTEN_ADDR")
 
-	store, err := database.NewPostgresStore()
+	store, err := storage.NewPostgresStore()
 
 	if err != nil {
 		log.Fatal("could not connect to the database: ", err)
@@ -39,7 +39,10 @@ func main() {
 		log.Fatal("could not connect to the database: ", err)
 	}
 
-	redisStore := redis.NewRedisStore()
+	redisStore, err := redis.NewRedisStore()
+	if err != nil {
+		log.Fatal("could not connect to the redis: ", err)
+	}
 	mailerService := mailer.NewMailerService()
 
 	handlerService := handlers.NewHandlerService(store, redisStore, mailerService)

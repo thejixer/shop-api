@@ -14,7 +14,7 @@ type RedisStore struct {
 	rdb *redis.Client
 }
 
-func NewRedisStore() *RedisStore {
+func NewRedisStore() (*RedisStore, error) {
 	var ctx = context.Background()
 
 	Addr := os.Getenv("REDIS_URI")
@@ -23,10 +23,15 @@ func NewRedisStore() *RedisStore {
 		Addr: Addr,
 	})
 
+	_, err := rdb.Ping(ctx).Result()
+	if err != nil {
+		return nil, err
+	}
+
 	return &RedisStore{
 		rdb: rdb,
 		ctx: ctx,
-	}
+	}, nil
 }
 
 func (rc *RedisStore) SetEmailVerificationCode(email, s string) error {

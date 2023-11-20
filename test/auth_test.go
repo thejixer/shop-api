@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/thejixer/shop-api/models"
+	"github.com/thejixer/shop-api/internal/models"
 )
 
 /*

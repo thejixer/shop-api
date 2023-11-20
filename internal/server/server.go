@@ -2,7 +2,7 @@ package server
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/thejixer/shop-api/handlers"
+	"github.com/thejixer/shop-api/internal/handlers"
 )
 
 type APIServer struct {

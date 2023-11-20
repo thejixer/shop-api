@@ -6,7 +6,7 @@ import (
 	"os"
 
 	_ "github.com/lib/pq"
-	"github.com/thejixer/shop-api/models"
+	"github.com/thejixer/shop-api/internal/models"
 )
 
 type PostgresStore struct {

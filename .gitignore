@@ -1,5 +1,5 @@
 .env
-/bin
+/cmd/bin
 Dockerfile
 docker-compose.yaml
 .air.toml

@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/thejixer/shop-api/models"
+	"github.com/thejixer/shop-api/internal/models"
 )
 
 func WriteReponse(c *echo.Context, s int, m string) error {

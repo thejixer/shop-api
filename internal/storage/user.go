@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/thejixer/shop-api/models"
-	"github.com/thejixer/shop-api/utils"
+	"github.com/thejixer/shop-api/internal/models"
+	"github.com/thejixer/shop-api/pkg/encryption"
 )
 
 func (s *PostgresStore) createUserTable() error {
@@ -39,7 +39,7 @@ func NewUserRepo(db *sql.DB) *UserRepo {
 
 func (r *UserRepo) Create(data models.SignUpDTO) (*models.User, error) {
 
-	hashedPassword, err := utils.HashPassword(data.Password)
+	hashedPassword, err := encryption.HashPassword(data.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (r *UserRepo) VerifyEmail(email string) error {
 	return nil
 }
 func (r *UserRepo) UpdatePassword(email, password string) error {
-	hashedPassword, err := utils.HashPassword(password)
+	hashedPassword, err := encryption.HashPassword(password)
 	if err != nil {
 		return err
 	}

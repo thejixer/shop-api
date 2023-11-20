@@ -5,7 +5,7 @@ import (
 	"net/smtp"
 	"os"
 
-	"github.com/thejixer/shop-api/models"
+	"github.com/thejixer/shop-api/internal/models"
 )
 
 type MailerService struct {
