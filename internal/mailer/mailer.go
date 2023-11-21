@@ -30,10 +30,16 @@ func NewMailerService() *MailerService {
 	}
 }
 
+func devPrintSkipEmail(env string) {
+	fmt.Println("######################################################")
+	fmt.Printf("skiping sending email since we're in %v enviroment \n", env)
+	fmt.Println("######################################################")
+}
+
 func (m *MailerService) SendVerificationEmail(u *models.User, c string) error {
 	env := os.Getenv("ENVIROMENT")
 	if env == "DEV" || env == "TEST" {
-		fmt.Printf("skiping sending email since we're in %v enviroment", env)
+		devPrintSkipEmail(env)
 		return nil
 	}
 
@@ -73,7 +79,7 @@ func (m *MailerService) SendVerificationEmail(u *models.User, c string) error {
 func (m *MailerService) SendPasswordChangeRequestEmail(u *models.User, c string) error {
 	env := os.Getenv("ENVIROMENT")
 	if env == "DEV" || env == "TEST" {
-		fmt.Printf("skiping sending email since we're in %v enviroment", env)
+		devPrintSkipEmail(env)
 		return nil
 	}
 

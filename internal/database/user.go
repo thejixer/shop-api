@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 	"errors"
-	"fmt"
+	"strings"
 	"time"
 
 	"github.com/thejixer/shop-api/internal/models"
@@ -14,6 +14,7 @@ func (s *PostgresStore) createUserTable() error {
 
 	query := `create table if not exists users (
 		id SERIAL PRIMARY KEY,
+		role VARCHAR(50),
 		name VARCHAR(100),
 		email VARCHAR(100),
 		isEmailVerified BOOLEAN,
@@ -37,26 +38,28 @@ func NewUserRepo(db *sql.DB) *UserRepo {
 	}
 }
 
-func (r *UserRepo) Create(data models.SignUpDTO) (*models.User, error) {
+func (r *UserRepo) Create(name, email, password, role string, isEmailVerified bool) (*models.User, error) {
 
-	hashedPassword, err := encryption.HashPassword(data.Password)
+	hashedPassword, err := encryption.HashPassword(password)
 	if err != nil {
 		return nil, err
 	}
 
 	newUser := &models.User{
-		Name:      data.Name,
-		Email:     data.Email,
-		Password:  hashedPassword,
-		CreatedAt: time.Now().UTC(),
+		Name:            name,
+		Email:           email,
+		Role:            role,
+		Password:        hashedPassword,
+		IsEmailVerified: isEmailVerified,
+		CreatedAt:       time.Now().UTC(),
 	}
 
 	query := `
-	INSERT INTO USERS (name, email, isEmailVerified, password, balance, createdAt)
-	VALUES ($1, LOWER($2), $3, $4, $5, $6) RETURNING id`
+	INSERT INTO USERS (role, name, email, isEmailVerified, password, balance, createdAt)
+	VALUES ($1, $2, LOWER($3), $4, $5, $6, $7) RETURNING id`
 	lastInsertId := 0
 
-	insertErr := r.db.QueryRow(query, newUser.Name, newUser.Email, false, newUser.Password, 0, newUser.CreatedAt).Scan(&lastInsertId)
+	insertErr := r.db.QueryRow(query, newUser.Role, newUser.Name, newUser.Email, newUser.IsEmailVerified, newUser.Password, 0, newUser.CreatedAt).Scan(&lastInsertId)
 	if insertErr != nil {
 		return nil, insertErr
 	}
@@ -120,10 +123,30 @@ func (r *UserRepo) UpdatePassword(email, password string) error {
 	return nil
 }
 
+func (r *UserRepo) FindUsers(text string, page, limit int) ([]*models.User, error) {
+
+	offset := page * limit
+	query := "SELECT * FROM USERS WHERE LOWER(USERS.name) LIKE $2 ORDER BY id OFFSET $1 ROWS FETCH NEXT $3 ROWS ONLY"
+	str := "%" + strings.ToLower(text) + "%"
+	rows, err := r.db.Query(query, offset, str, limit)
+	if err != nil {
+		return nil, err
+	}
+	users := []*models.User{}
+	for rows.Next() {
+		u, err := scanIntoUsers(rows)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, u)
+	}
+	return users, nil
+
+}
+
 func scanIntoUsers(rows *sql.Rows) (*models.User, error) {
 	u := new(models.User)
-	if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.IsEmailVerified, &u.Password, &u.Balance, &u.CreatedAt); err != nil {
-		fmt.Println(err)
+	if err := rows.Scan(&u.ID, &u.Role, &u.Name, &u.Email, &u.IsEmailVerified, &u.Password, &u.Balance, &u.CreatedAt); err != nil {
 		return nil, err
 	}
 	return u, nil

@@ -154,7 +154,7 @@ func TestFailedLogin(t *testing.T) {
 	}
 	result := models.ResponseDTO{}
 	json.Unmarshal(res, &result)
-	expected := 400
+	expected := 401
 	if result.StatusCode != expected {
 		t.Errorf("expected %v but got %v", expected, result.StatusCode)
 	}

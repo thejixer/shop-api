@@ -11,6 +11,12 @@ type SignUpDTO struct {
 	Password string `json:"password" validate:"required"`
 }
 
+type CreateAdminDTO struct {
+	Name     string `json:"name" validate:"required"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required"`
+}
+
 type LoginDTO struct {
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required"`

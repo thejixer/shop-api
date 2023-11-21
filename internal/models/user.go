@@ -7,15 +7,17 @@ import (
 )
 
 type UserRepository interface {
-	Create(data SignUpDTO) (*User, error)
+	Create(name, email, password, role string, isEmailVerified bool) (*User, error)
 	FindById(id int) (*User, error)
 	FindByEmail(email string) (*User, error)
 	VerifyEmail(email string) error
 	UpdatePassword(email, password string) error
+	FindUsers(text string, page, limit int) ([]*User, error)
 }
 
 type User struct {
 	ID              int             `json:"id"`
+	Role            string          `json:"role"`
 	Name            string          `json:"name"`
 	Email           string          `json:"email"`
 	IsEmailVerified bool            `json:"isEmailVerified"`
@@ -26,6 +28,7 @@ type User struct {
 
 type UserDto struct {
 	ID        int       `json:"id"`
+	Role      string    `json:"role"`
 	Name      string    `json:"name"`
 	Email     string    `json:"email"`
 	Balance   float64   `json:"balance"`

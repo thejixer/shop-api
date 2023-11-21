@@ -7,11 +7,11 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
+	"github.com/thejixer/shop-api/internal/database"
 	"github.com/thejixer/shop-api/internal/handlers"
 	"github.com/thejixer/shop-api/internal/mailer"
 	"github.com/thejixer/shop-api/internal/redis"
 	"github.com/thejixer/shop-api/internal/server"
-	storage "github.com/thejixer/shop-api/internal/storage"
 )
 
 func init() {
@@ -29,7 +29,7 @@ func main() {
 
 	listenAddr := os.Getenv("LISTEN_ADDR")
 
-	store, err := storage.NewPostgresStore()
+	store, err := database.NewPostgresStore()
 
 	if err != nil {
 		log.Fatal("could not connect to the database: ", err)

@@ -6,14 +6,13 @@ func (s *APIServer) ApplyRoutes(e *echo.Echo) {
 
 	e.GET("/", s.handlerService.HandleHelloWorld)
 
-	auth := e.Group("/auth")
-	auth.POST("/signup", s.handlerService.HangeSingup)
-	auth.POST("/request-verificationCode", s.handlerService.HandleRequestVerificationEmail)
-	auth.GET("/verify-email", s.handlerService.HandleEmailVerification)
-	auth.POST("/login", s.handlerService.HandleLogin)
-	auth.POST("/me", s.handlerService.HandleMe, s.handlerService.AuthGaurd)
-	auth.POST("/request-change-password", s.handlerService.HandleRequestChangePassword)
-	auth.GET("/verify-changepassword-request", s.handlerService.HandleVerifyChangePasswordRequest)
-	auth.POST("/change-password", s.handlerService.HandleChangePassword)
+	s.ApplyAuthRoutes(e)
 
+	admin := e.Group("/admin")
+	admin.POST("/me", s.handlerService.HandleMe, s.handlerService.AdminGaurd)
+	admin.POST("/create", s.handlerService.CreateAdmin, s.handlerService.AdminGaurd)
+
+	user := e.Group("/user")
+	user.GET("/", s.handlerService.GetUsers, s.handlerService.AdminGaurd)
+	user.GET("/:id", s.handlerService.GetSingleUser, s.handlerService.AdminGaurd)
 }
