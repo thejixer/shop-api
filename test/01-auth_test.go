@@ -3,11 +3,7 @@ package test
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
-	"math/rand"
-	"net/http"
 	"os"
 	"testing"
 	"time"
@@ -30,84 +26,17 @@ import (
 
 */
 
-type User struct {
-	Name     string
-	Email    string
-	Password string
-	Token    string
-}
-
-var domain string
-var customContext = map[string]any{}
-
-func setContext(key string, value any) {
-	customContext[key] = value
-}
-
-func getContect(key string) any {
-	return customContext[key]
-}
-
-func generateRandomSingleDigit() int {
-	return rand.Intn(10)
-}
-
-func generateNumericString(n int) string {
-	res := ""
-	for i := n; i < n; i++ {
-		res = fmt.Sprintf("%v%v", res, generateRandomSingleDigit())
-	}
-	return res
-}
-
-func Fetch(url, method string, body io.Reader) ([]byte, error) {
-
-	switch method {
-	case "GET":
-		resp, err := http.Get(url)
-		if err != nil {
-			return nil, errors.New("server unreachable")
-		}
-
-		data, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, errors.New("server unreachable")
-		}
-
-		return data, nil
-	case "POST":
-		resp, err := http.Post(url, "application/json", body)
-		if err != nil {
-			return nil, errors.New("server unreachable")
-		}
-
-		data, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, errors.New("server unreachable")
-		}
-
-		return data, nil
-	default:
-		return nil, errors.New("bad method")
-	}
-
-}
-
 func init() {
 	godotenv.Load("../.env")
-	domain = os.Getenv("DOMAIN")
+	Domain = os.Getenv("DOMAIN")
 }
 
 func TestRoot(t *testing.T) {
 
-	body, err := Fetch(domain, "GET", nil)
-
-	if err != nil {
-		t.Error("server unreachable")
-	}
+	res := Fetch("GET", "", "", nil, t)
 
 	expected := "Hello, World from shop-api!"
-	if x := string(body); x != expected {
+	if x := string(res); x != expected {
 		t.Errorf("expected %s but got %s", expected, x)
 	}
 
@@ -115,23 +44,20 @@ func TestRoot(t *testing.T) {
 
 func TestSignUp(t *testing.T) {
 
-	email := fmt.Sprintf("test-%v%v@test.com", time.Now().UnixMilli(), generateNumericString(4))
+	email := fmt.Sprintf("test-%v%v@test.com", time.Now().UnixMilli(), GenerateNumericString(4))
 
 	u1 := User{}
 	u1.Name = "u1 user"
 	u1.Email = email
 	u1.Password = "123456"
 
-	setContext("u1", u1)
+	SetContext("u1", u1)
 
 	bodyString := fmt.Sprintf(`{"name": "%v", "email": "%v", "password": "%v" }`, u1.Name, u1.Email, u1.Password)
 
 	body := []byte(bodyString)
 
-	res, err := Fetch(domain+"/auth/signup", "POST", bytes.NewBuffer(body))
-	if err != nil {
-		t.Error("server aint reachable")
-	}
+	res := Fetch("POST", "auth/signup", "", bytes.NewBuffer(body), t)
 
 	result := models.ResponseDTO{}
 	json.Unmarshal(res, &result)
@@ -144,14 +70,12 @@ func TestSignUp(t *testing.T) {
 }
 
 func TestFailedLogin(t *testing.T) {
-	u1 := getContect("u1").(User)
+	u1 := GetContect("u1").(User)
 	bodyString := fmt.Sprintf(`{ "email": "%v", "password": "%v" }`, u1.Email, u1.Password)
 
 	body := []byte(bodyString)
-	res, err := Fetch(domain+"/auth/login", "POST", bytes.NewBuffer(body))
-	if err != nil {
-		t.Error("server aint reachable")
-	}
+	res := Fetch("POST", "auth/login", "", bytes.NewBuffer(body), t)
+
 	result := models.ResponseDTO{}
 	json.Unmarshal(res, &result)
 	expected := 401
@@ -162,12 +86,10 @@ func TestFailedLogin(t *testing.T) {
 
 func TestVerifyEmail(t *testing.T) {
 
-	u1 := getContect("u1").(User)
-	url := fmt.Sprintf("%v/auth/verify-email?email=%v&code=%v", domain, u1.Email, "1111")
-	res, err := Fetch(url, "GET", nil)
-	if err != nil {
-		t.Error("server aint reachable")
-	}
+	u1 := GetContect("u1").(User)
+	url := fmt.Sprintf("auth/verify-email?email=%v&code=%v", u1.Email, "1111")
+	res := Fetch("GET", url, "", nil, t)
+
 	data := models.TokenDTO{}
 	json.Unmarshal(res, &data)
 
@@ -176,19 +98,17 @@ func TestVerifyEmail(t *testing.T) {
 	}
 
 	u1.Token = data.Token
-	setContext("u1", u1)
+	SetContext("u1", u1)
 
 }
 
 func TestLogin(t *testing.T) {
-	u1 := getContect("u1").(User)
+	u1 := GetContect("u1").(User)
 	bodyString := fmt.Sprintf(`{ "email": "%v", "password": "%v" }`, u1.Email, u1.Password)
 
 	body := []byte(bodyString)
-	res, err := Fetch(domain+"/auth/login", "POST", bytes.NewBuffer(body))
-	if err != nil {
-		t.Error("server aint reachable")
-	}
+	res := Fetch("POST", "auth/login", "", bytes.NewBuffer(body), t)
+
 	result := models.TokenDTO{}
 	json.Unmarshal(res, &result)
 	if len(result.Token) < 10 {
@@ -198,45 +118,25 @@ func TestLogin(t *testing.T) {
 }
 
 func TestMe(t *testing.T) {
-	u1 := getContect("u1").(User)
+	u1 := GetContect("u1").(User)
 
-	client := &http.Client{}
-
-	req, err := http.NewRequest("POST", domain+"/auth/me", nil)
-	if err != nil {
-		t.Error("server aint reachable")
-	}
-	authHeader := fmt.Sprintf("ut %v", u1.Token)
-	req.Header.Add("auth", authHeader)
-	req.Header.Add("Content-Type", "application/json")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		t.Error("server aint reachable")
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		t.Error("server aint reachable")
-	}
+	res := Fetch("POST", "auth/me", u1.Token, nil, t)
 
 	me := models.UserDto{}
-	json.Unmarshal(body, &me)
+	json.Unmarshal(res, &me)
 
 	if me.Email != u1.Email {
-		t.Error("server aint reachable")
+		t.Error("expected to get u1's details but didn't")
 	}
 
 }
 
 func TestRequestChangePassword(t *testing.T) {
-	u1 := getContect("u1").(User)
+	u1 := GetContect("u1").(User)
 	bodyString := fmt.Sprintf(`{ "email": "%v" }`, u1.Email)
 	body := []byte(bodyString)
-	res, err := Fetch(domain+"/auth/request-change-password", "POST", bytes.NewBuffer(body))
-	if err != nil {
-		t.Error("server aint reachable")
-	}
+	res := Fetch("POST", "auth/request-change-password", "", bytes.NewBuffer(body), t)
+
 	result := models.ResponseDTO{}
 	json.Unmarshal(res, &result)
 
@@ -246,11 +146,9 @@ func TestRequestChangePassword(t *testing.T) {
 		t.Errorf("expected to get status code %v but got %v", expected, result.StatusCode)
 	}
 
-	url := fmt.Sprintf("%v/auth/verify-changepassword-request?email=%v&code=%v", domain, u1.Email, "1111")
-	res, err = Fetch(url, "GET", nil)
-	if err != nil {
-		t.Error("server aint reachable")
-	}
+	url := fmt.Sprintf("auth/verify-changepassword-request?email=%v&code=%v", u1.Email, "1111")
+	res = Fetch("GET", url, "", nil, t)
+
 	result = models.ResponseDTO{}
 	json.Unmarshal(res, &result)
 
@@ -260,13 +158,11 @@ func TestRequestChangePassword(t *testing.T) {
 	}
 
 	u1.Password = "123456789"
-	setContext("u1", u1)
+	SetContext("u1", u1)
 	bodyString = fmt.Sprintf(`{ "email": "%v", "password": "%v", "code": "%v" }`, u1.Email, u1.Password, "1111")
 	body = []byte(bodyString)
-	res, err = Fetch(domain+"/auth/change-password", "POST", bytes.NewBuffer(body))
-	if err != nil {
-		t.Error("server aint reachable")
-	}
+	res = Fetch("POST", "auth/change-password", "", bytes.NewBuffer(body), t)
+
 	result = models.ResponseDTO{}
 	json.Unmarshal(res, &result)
 
@@ -277,14 +173,12 @@ func TestRequestChangePassword(t *testing.T) {
 }
 
 func TestFailedLoginWithOldPassword(t *testing.T) {
-	u1 := getContect("u1").(User)
+	u1 := GetContect("u1").(User)
 	bodyString := fmt.Sprintf(`{ "email": "%v", "password": "%v" }`, u1.Email, "123456")
 
 	body := []byte(bodyString)
-	res, err := Fetch(domain+"/auth/login", "POST", bytes.NewBuffer(body))
-	if err != nil {
-		t.Error("server aint reachable")
-	}
+	res := Fetch("POST", "auth/login", "", bytes.NewBuffer(body), t)
+
 	result := models.ResponseDTO{}
 	json.Unmarshal(res, &result)
 	expected := 400
@@ -294,14 +188,12 @@ func TestFailedLoginWithOldPassword(t *testing.T) {
 }
 
 func TestSuccessfulLoginwithNewPassword(t *testing.T) {
-	u1 := getContect("u1").(User)
+	u1 := GetContect("u1").(User)
 	bodyString := fmt.Sprintf(`{ "email": "%v", "password": "%v" }`, u1.Email, u1.Password)
 
 	body := []byte(bodyString)
-	res, err := Fetch(domain+"/auth/login", "POST", bytes.NewBuffer(body))
-	if err != nil {
-		t.Error("server aint reachable")
-	}
+	res := Fetch("POST", "auth/login", "", bytes.NewBuffer(body), t)
+
 	result := models.TokenDTO{}
 	json.Unmarshal(res, &result)
 	if len(result.Token) < 10 {

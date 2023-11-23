@@ -16,16 +16,30 @@ import (
 
 func init() {
 	godotenv.Load()
+}
+
+func seedDB(store *database.PostgresStore) {
+	fmt.Println("db is being seeded")
+	store.UserRepo.Create(
+		"main addmin",
+		os.Getenv("MAIN_ADMIN_EMAIL"),
+		os.Getenv("MAIN_ADMIN_PASSWORD"),
+		"admin",
+		true,
+	)
+}
+
+func main() {
+
 	env := flag.String("env", "DEV", "enviroment")
+	seed := flag.Bool("seed", false, "seed the db")
+
 	flag.Parse()
 
 	os.Setenv("ENVIROMENT", *env)
 	fmt.Println("##########################3")
 	fmt.Println("enviroment is : ", os.Getenv("ENVIROMENT"))
 	fmt.Println("##########################3")
-}
-
-func main() {
 
 	listenAddr := os.Getenv("LISTEN_ADDR")
 
@@ -37,6 +51,10 @@ func main() {
 
 	if err := store.Init(); err != nil {
 		log.Fatal("could not connect to the database: ", err)
+	}
+
+	if *seed {
+		seedDB(store)
 	}
 
 	redisStore, err := redis.NewRedisStore()

@@ -10,8 +10,9 @@ import (
 )
 
 type PostgresStore struct {
-	db       *sql.DB
-	UserRepo models.UserRepository
+	db          *sql.DB
+	UserRepo    models.UserRepository
+	ProductRepo models.ProductRepository
 }
 
 func NewPostgresStore() (*PostgresStore, error) {
@@ -31,16 +32,22 @@ func NewPostgresStore() (*PostgresStore, error) {
 	}
 
 	userRepo := NewUserRepo(db)
+	productRepo := NewProductRepo(db)
 
 	return &PostgresStore{
-		db:       db,
-		UserRepo: userRepo,
+		db:          db,
+		UserRepo:    userRepo,
+		ProductRepo: productRepo,
 	}, nil
 }
 
 func (s *PostgresStore) Init() error {
 
 	if err := s.createUserTable(); err != nil {
+		return err
+	}
+
+	if err := s.createProductTable(); err != nil {
 		return err
 	}
 

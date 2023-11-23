@@ -39,3 +39,10 @@ type ChangePasswordDTO struct {
 	Password string `json:"password"`
 	Code     string `json:"code"`
 }
+
+type CreateProductDto struct {
+	Title       string  `json:"title" validate:"required"`
+	Price       float64 `json:"price" validate:"required"`
+	Quantity    int     `json:"quantity" validate:"required"`
+	Description string  `json:"description" validate:"required"`
+}

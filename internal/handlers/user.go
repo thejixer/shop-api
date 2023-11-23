@@ -423,5 +423,11 @@ func (h *HandlerService) GetUsers(c echo.Context) error {
 		return WriteReponse(c, http.StatusNotFound, "not found")
 	}
 
-	return c.JSON(http.StatusOK, users)
+	var result []models.UserDto
+
+	for _, s := range users {
+		result = append(result, dataprocesslayer.ConvertToUserDto(s))
+	}
+
+	return c.JSON(http.StatusOK, result)
 }

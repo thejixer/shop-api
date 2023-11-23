@@ -27,7 +27,7 @@ func FindSingleUser(h *HandlerService, id int) (*models.User, error) {
 
 	var thisUser *models.User
 	var err error
-	thisUser = h.redisStore.GetUser(id)
+	// thisUser = h.redisStore.GetUser(id)
 
 	if thisUser != nil {
 		return thisUser, nil

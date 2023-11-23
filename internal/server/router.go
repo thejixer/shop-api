@@ -15,4 +15,10 @@ func (s *APIServer) ApplyRoutes(e *echo.Echo) {
 	user := e.Group("/user")
 	user.GET("/", s.handlerService.GetUsers, s.handlerService.AdminGaurd)
 	user.GET("/:id", s.handlerService.GetSingleUser, s.handlerService.AdminGaurd)
+
+	product := e.Group("/product")
+	product.POST("/", s.handlerService.CreateProduct, s.handlerService.AdminGaurd)
+	product.POST("/:id", s.handlerService.EditProduct, s.handlerService.AdminGaurd)
+	product.GET("/", s.handlerService.GetProducts)
+	product.GET("/:id", s.handlerService.GetProduct)
 }

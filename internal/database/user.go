@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -122,13 +123,13 @@ func (r *UserRepo) UpdatePassword(email, password string) error {
 
 	return nil
 }
-
 func (r *UserRepo) FindUsers(text string, page, limit int) ([]*models.User, error) {
 
 	offset := page * limit
 	query := "SELECT * FROM USERS WHERE LOWER(USERS.name) LIKE $2 ORDER BY id OFFSET $1 ROWS FETCH NEXT $3 ROWS ONLY"
 	str := "%" + strings.ToLower(text) + "%"
 	rows, err := r.db.Query(query, offset, str, limit)
+	defer rows.Close()
 	if err != nil {
 		return nil, err
 	}
@@ -141,10 +142,13 @@ func (r *UserRepo) FindUsers(text string, page, limit int) ([]*models.User, erro
 		users = append(users, u)
 	}
 	return users, nil
-
 }
 
 func scanIntoUsers(rows *sql.Rows) (*models.User, error) {
+	x, _ := rows.Columns()
+	fmt.Println("#############")
+	fmt.Printf("%+v \n", x)
+	fmt.Println("#############")
 	u := new(models.User)
 	if err := rows.Scan(&u.ID, &u.Role, &u.Name, &u.Email, &u.IsEmailVerified, &u.Password, &u.Balance, &u.CreatedAt); err != nil {
 		return nil, err
