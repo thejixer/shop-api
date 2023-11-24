@@ -418,16 +418,12 @@ func (h *HandlerService) GetUsers(c echo.Context) error {
 		limit = 10
 	}
 
-	users, fErr := h.store.UserRepo.FindUsers(text, page, limit)
+	users, count, fErr := h.store.UserRepo.FindUsers(text, page, limit)
 	if fErr != nil {
 		return WriteReponse(c, http.StatusNotFound, "not found")
 	}
 
-	var result []models.UserDto
-
-	for _, s := range users {
-		result = append(result, dataprocesslayer.ConvertToUserDto(s))
-	}
+	result := dataprocesslayer.ConvertToLLUserDto(users, count)
 
 	return c.JSON(http.StatusOK, result)
 }

@@ -12,3 +12,18 @@ func ConvertToProductDto(p *models.Product) models.ProductDto {
 		Description: p.Description,
 	}
 }
+
+func ConvertToLLProductDto(a []*models.Product, count int) models.LL_ProductDto {
+
+	var users []models.ProductDto
+
+	for _, s := range a {
+		users = append(users, ConvertToProductDto(s))
+	}
+
+	return models.LL_ProductDto{
+		Total:  count,
+		Result: users,
+	}
+
+}

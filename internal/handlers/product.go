@@ -82,16 +82,12 @@ func (h *HandlerService) GetProducts(c echo.Context) error {
 		limit = 10
 	}
 
-	products, fErr := h.store.ProductRepo.Find(text, page, limit)
+	products, count, fErr := h.store.ProductRepo.Find(text, page, limit)
 	if fErr != nil {
 		return WriteReponse(c, http.StatusNotFound, "not found")
 	}
 
-	var result = make([]models.ProductDto, 0)
-
-	for _, s := range products {
-		result = append(result, dataprocesslayer.ConvertToProductDto(s))
-	}
+	result := dataprocesslayer.ConvertToLLProductDto(products, count)
 
 	return c.JSON(http.StatusOK, result)
 }

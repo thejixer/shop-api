@@ -123,7 +123,7 @@ func (r *UserRepo) UpdatePassword(email, password string) error {
 
 	return nil
 }
-func (r *UserRepo) FindUsers(text string, page, limit int) ([]*models.User, error) {
+func (r *UserRepo) FindUsers(text string, page, limit int) ([]*models.User, int, error) {
 
 	offset := page * limit
 	query := "SELECT * FROM USERS WHERE LOWER(USERS.name) LIKE $2 ORDER BY id OFFSET $1 ROWS FETCH NEXT $3 ROWS ONLY"
@@ -131,17 +131,21 @@ func (r *UserRepo) FindUsers(text string, page, limit int) ([]*models.User, erro
 	rows, err := r.db.Query(query, offset, str, limit)
 	defer rows.Close()
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	users := []*models.User{}
 	for rows.Next() {
 		u, err := scanIntoUsers(rows)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		users = append(users, u)
 	}
-	return users, nil
+
+	var count int
+	r.db.QueryRow("SELECT count(id) FROM USERS WHERE LOWER(USERS.name) LIKE $1", str).Scan(&count)
+
+	return users, count, nil
 }
 
 func scanIntoUsers(rows *sql.Rows) (*models.User, error) {

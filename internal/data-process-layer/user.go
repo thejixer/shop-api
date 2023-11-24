@@ -15,3 +15,18 @@ func ConvertToUserDto(u *models.User) models.UserDto {
 		CreatedAt: u.CreatedAt,
 	}
 }
+
+func ConvertToLLUserDto(a []*models.User, count int) models.LL_UserDto {
+
+	var users []models.UserDto
+
+	for _, s := range a {
+		users = append(users, ConvertToUserDto(s))
+	}
+
+	return models.LL_UserDto{
+		Total:  count,
+		Result: users,
+	}
+
+}

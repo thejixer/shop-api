@@ -12,7 +12,7 @@ type UserRepository interface {
 	FindByEmail(email string) (*User, error)
 	VerifyEmail(email string) error
 	UpdatePassword(email, password string) error
-	FindUsers(text string, page, limit int) ([]*User, error)
+	FindUsers(text string, page, limit int) ([]*User, int, error)
 }
 
 type User struct {
@@ -33,4 +33,9 @@ type UserDto struct {
 	Email     string    `json:"email"`
 	Balance   float64   `json:"balance"`
 	CreatedAt time.Time `json:"createdAt"`
+}
+
+type LL_UserDto struct {
+	Total  int       `json:"total"`
+	Result []UserDto `json:"result"`
 }

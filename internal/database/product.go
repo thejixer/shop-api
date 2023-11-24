@@ -94,7 +94,7 @@ func (r *ProductRepo) FindById(id int) (*models.Product, error) {
 	return nil, errors.New("not found")
 }
 
-func (r *ProductRepo) Find(text string, page, limit int) ([]*models.Product, error) {
+func (r *ProductRepo) Find(text string, page, limit int) ([]*models.Product, int, error) {
 
 	offset := page * limit
 	query := `SELECT * FROM PRODUCTS 
@@ -107,18 +107,26 @@ func (r *ProductRepo) Find(text string, page, limit int) ([]*models.Product, err
 	rows, err := r.db.Query(query, offset, str, limit)
 	// defer rows.Close()
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	products := []*models.Product{}
 	for rows.Next() {
 		u, err := scanIntoProducts(rows)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		products = append(products, u)
 	}
 
-	return products, nil
+	var count int
+	r.db.QueryRow(`
+		SELECT count(id) 
+		FROM PRODUCTS
+		WHERE LOWER(PRODUCTS.title) LIKE $1
+		OR LOWER(PRODUCTS.description) LIKE $1
+	`, str).Scan(&count)
+
+	return products, count, nil
 }
 
 func scanIntoProducts(rows *sql.Rows) (*models.Product, error) {

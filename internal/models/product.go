@@ -10,7 +10,7 @@ type ProductRepository interface {
 	Create(data CreateProductDto) (*Product, error)
 	Edit(id int, data CreateProductDto) (*Product, error)
 	FindById(id int) (*Product, error)
-	Find(text string, page, limit int) ([]*Product, error)
+	Find(text string, page, limit int) ([]*Product, int, error)
 }
 
 type Product struct {
@@ -28,4 +28,9 @@ type ProductDto struct {
 	Price       float64 `json:"price"`
 	Quantity    int     `json:"quantity"`
 	Description string  `json:"description"`
+}
+
+type LL_ProductDto struct {
+	Total  int          `json:"total"`
+	Result []ProductDto `json:"result"`
 }
