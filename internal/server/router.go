@@ -21,4 +21,9 @@ func (s *APIServer) ApplyRoutes(e *echo.Echo) {
 	product.POST("/:id", s.handlerService.EditProduct, s.handlerService.AdminGaurd)
 	product.GET("/", s.handlerService.GetProducts)
 	product.GET("/:id", s.handlerService.GetProduct)
+
+	cart := e.Group("/cart")
+	cart.POST("/", s.handlerService.AddToCart, s.handlerService.AuthGaurd)
+	cart.GET("/", s.handlerService.GetMyCart, s.handlerService.AuthGaurd)
+	cart.DELETE("/:id", s.handlerService.RemoveFromCart, s.handlerService.AuthGaurd)
 }

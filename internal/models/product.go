@@ -23,10 +23,9 @@ type Product struct {
 }
 
 type ProductDto struct {
-	Id          int       `json:"id"`
-	Title       string    `json:"title"`
-	Price       float64   `json:"price"`
-	Quantity    int       `json:"quantity"`
-	Description string    `json:"description"`
-	CreatedAt   time.Time `json:"createdAt"`
+	Id          int     `json:"id"`
+	Title       string  `json:"title"`
+	Price       float64 `json:"price"`
+	Quantity    int     `json:"quantity"`
+	Description string  `json:"description"`
 }

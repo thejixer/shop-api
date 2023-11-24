@@ -10,6 +10,5 @@ func ConvertToProductDto(p *models.Product) models.ProductDto {
 		Price:       b,
 		Quantity:    p.Quantity,
 		Description: p.Description,
-		CreatedAt:   p.CreatedAt,
 	}
 }
