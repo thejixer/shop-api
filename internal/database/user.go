@@ -147,6 +147,19 @@ func (r *UserRepo) FindUsers(text string, page, limit int) ([]*models.User, int,
 
 	return users, count, nil
 }
+func (r *UserRepo) ChargeBalance(userId int, amount float64) error {
+
+	query := `
+		UPDATE USERS
+		SET balance = balance + $1
+		WHERE id = $2
+	`
+	_, err := r.db.Exec(query, amount, userId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 func scanIntoUsers(rows *sql.Rows) (*models.User, error) {
 	x, _ := rows.Columns()

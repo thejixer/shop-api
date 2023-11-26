@@ -13,6 +13,7 @@ type UserRepository interface {
 	VerifyEmail(email string) error
 	UpdatePassword(email, password string) error
 	FindUsers(text string, page, limit int) ([]*User, int, error)
+	ChargeBalance(userId int, amount float64) error
 }
 
 type User struct {

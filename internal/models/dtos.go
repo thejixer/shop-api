@@ -51,3 +51,7 @@ type AddtoCartDto struct {
 	ProductId int `json:"productId"`
 	Quantity  int `json:"quantity"`
 }
+
+type ChargeBalanceDto struct {
+	Amount float64 `json:"amount" validate:"required"`
+}

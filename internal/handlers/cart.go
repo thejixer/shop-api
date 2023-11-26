@@ -27,7 +27,10 @@ func (h *HandlerService) AddToCart(c echo.Context) error {
 		return WriteReponse(c, http.StatusBadRequest, "invalid data")
 	}
 
-	me := GetMe(&c)
+	me, err := GetMe(&c)
+	if err != nil {
+		return WriteReponse(c, http.StatusUnauthorized, "unathorized")
+	}
 
 	err2 := h.store.CartRepo.Add(me.ID, body.ProductId, body.Quantity)
 
@@ -40,7 +43,10 @@ func (h *HandlerService) AddToCart(c echo.Context) error {
 }
 
 func (h *HandlerService) GetMyCart(c echo.Context) error {
-	me := GetMe(&c)
+	me, err := GetMe(&c)
+	if err != nil {
+		return WriteReponse(c, http.StatusUnauthorized, "unathorized")
+	}
 
 	items, err := h.store.CartRepo.FindUsersItems(me.ID)
 	if err != nil {
@@ -55,7 +61,10 @@ func (h *HandlerService) GetMyCart(c echo.Context) error {
 }
 
 func (h *HandlerService) RemoveFromCart(c echo.Context) error {
-	me := GetMe(&c)
+	me, err := GetMe(&c)
+	if err != nil {
+		return WriteReponse(c, http.StatusUnauthorized, "unathorized")
+	}
 
 	id := c.Param("id")
 	productId, err := strconv.Atoi(id)

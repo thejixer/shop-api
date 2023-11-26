@@ -247,13 +247,20 @@ func (h *HandlerService) AdminGaurd(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-func GetMe(c *echo.Context) *models.User {
-	return (*c).(CustomContext).User
+func GetMe(c *echo.Context) (*models.User, error) {
+	me := (*c).(CustomContext).User
+	if me == nil {
+		return nil, errors.New("unathorized")
+	}
+	return me, nil
 }
 
 func (h *HandlerService) HandleMe(c echo.Context) error {
 
-	me := GetMe(&c)
+	me, err := GetMe(&c)
+	if err != nil {
+		return WriteReponse(c, http.StatusUnauthorized, "unathorized")
+	}
 
 	user := dataprocesslayer.ConvertToUserDto(me)
 
@@ -426,4 +433,30 @@ func (h *HandlerService) GetUsers(c echo.Context) error {
 	result := dataprocesslayer.ConvertToLLUserDto(users, count)
 
 	return c.JSON(http.StatusOK, result)
+}
+
+func (h *HandlerService) ChargeBalance(c echo.Context) error {
+	// for simplicity reasons we dont have payment systems and users can charge their balance as they wish
+	me, err := GetMe(&c)
+	if err != nil {
+		return WriteReponse(c, http.StatusUnauthorized, "unathorized")
+	}
+
+	body := models.ChargeBalanceDto{}
+
+	if err := c.Bind(&body); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	if err := c.Validate(body); err != nil || body.Amount <= 0 {
+		return WriteReponse(c, http.StatusBadRequest, "invalid input")
+	}
+
+	if err := h.store.UserRepo.ChargeBalance(me.ID, body.Amount); err != nil {
+		fmt.Println(err)
+		return WriteReponse(c, http.StatusInternalServerError, "oops, this one's on us")
+	}
+
+	return WriteReponse(c, http.StatusAccepted, "successfully charged your account")
+
 }
