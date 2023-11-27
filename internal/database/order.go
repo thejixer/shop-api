@@ -23,7 +23,8 @@ func (s *PostgresStore) createOrderItemTable() error {
 		id SERIAL PRIMARY KEY,
 		orderId integer,
 		productId int,
-		quantity int
+		quantity int,
+		price DECIMAL
 	)	
 	
 	`
@@ -66,14 +67,14 @@ func getUsersCartItems(db *sql.DB, userId int) ([]*models.CartItem, error) {
 	return items, nil
 }
 
-func (r *OrderRepo) Create(data models.Order) (*models.Order, error) {
+func (r *OrderRepo) Create(data models.Order) error {
 
 	userCartItems, err := getUsersCartItems(r.db, data.UserId)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if len(userCartItems) == 0 {
-		return nil, errors.New("there is nothing in your cart")
+		return errors.New("there is nothing in your cart")
 	}
 	var totalPrice decimal.Decimal
 
@@ -96,10 +97,10 @@ func (r *OrderRepo) Create(data models.Order) (*models.Order, error) {
 	`, totalPrice, data.UserId, data.UserId, data.Status, totalPrice)
 
 	for _, s := range userCartItems {
-		query += fmt.Sprintf(`INSERT INTO orderItems (orderId, productId, quantity)
-		values (currval('orders_id_seq'), %v, %v);
+		query += fmt.Sprintf(`INSERT INTO orderItems (orderId, productId, quantity, price)
+		values (currval('orders_id_seq'), %v, %v, %v);
 		
-		`, s.ProductId, s.Quantity)
+		`, s.ProductId, s.Quantity, s.ProductPrice)
 		query += fmt.Sprintf(`DELETE FROM cartitems WHERE cartitems.userId = %v AND cartitems.productId = %v;
 		
 		`, data.UserId, s.ProductId)
@@ -118,8 +119,71 @@ func (r *OrderRepo) Create(data models.Order) (*models.Order, error) {
 	_, transactionError := r.db.Exec(query)
 
 	if transactionError != nil {
-		return nil, transactionError
+		return transactionError
 	}
 
-	return nil, nil
+	return nil
+}
+
+func (r *OrderRepo) FindById(id int) (*models.Order, error) {
+	rows, err := r.db.Query("SELECT * FROM orders WHERE id = $1", id)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		return scanIntoOrders(rows)
+	}
+
+	return nil, errors.New("not found")
+}
+
+func (r *OrderRepo) FindOrderItemsOfSingleOrder(orderId, userId int) ([]*models.OrderItem, error) {
+	query := `
+		Select i.orderId as orderId, i.quantity as quantity, i.price as priceAtTheTime, p.id as ProductId, p.title as ProductTitle, p.Price as ProductPrice, p.quantity as ProductQuantity, p.description as ProductDescription
+		From orderItems i
+		JOIN products p
+		ON i.productId = p.id
+		WHERE i.orderId = $1
+		`
+	rows, err := r.db.Query(query, orderId)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*models.OrderItem{}
+	for rows.Next() {
+		u, err := scanIntoItems(rows)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, u)
+	}
+
+	return items, nil
+}
+
+func scanIntoOrders(rows *sql.Rows) (*models.Order, error) {
+	o := new(models.Order)
+	if err := rows.Scan(&o.Id, &o.UserId, &o.Status, &o.TotalPrice, &o.CreatedAt); err != nil {
+		return nil, err
+	}
+	return o, nil
+}
+
+func scanIntoItems(rows *sql.Rows) (*models.OrderItem, error) {
+	i := new(models.OrderItem)
+	if err := rows.Scan(
+		&i.OrderId,
+		&i.Quantity,
+		&i.PriceAtTheTime,
+		&i.ProductId,
+		&i.ProductTitle,
+		&i.ProductPrice,
+		&i.ProductQuantity,
+		&i.ProductDescription,
+	); err != nil {
+		return nil, err
+	}
+	return i, nil
 }

@@ -3,7 +3,6 @@ package database
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -130,10 +129,10 @@ func (r *UserRepo) FindUsers(text string, page, limit int) ([]*models.User, int,
 	query := "SELECT * FROM USERS WHERE LOWER(USERS.name) LIKE $2 ORDER BY id OFFSET $1 ROWS FETCH NEXT $3 ROWS ONLY"
 	str := "%" + strings.ToLower(text) + "%"
 	rows, err := r.db.Query(query, offset, str, limit)
-	defer rows.Close()
 	if err != nil {
 		return nil, 0, err
 	}
+	defer rows.Close()
 	users := []*models.User{}
 	for rows.Next() {
 		u, err := scanIntoUsers(rows)
@@ -163,12 +162,17 @@ func (r *UserRepo) ChargeBalance(userId int, amount float64) error {
 }
 
 func scanIntoUsers(rows *sql.Rows) (*models.User, error) {
-	x, _ := rows.Columns()
-	fmt.Println("#############")
-	fmt.Printf("%+v \n", x)
-	fmt.Println("#############")
 	u := new(models.User)
-	if err := rows.Scan(&u.ID, &u.Role, &u.Name, &u.Email, &u.IsEmailVerified, &u.Password, &u.Balance, &u.CreatedAt); err != nil {
+	if err := rows.Scan(
+		&u.ID,
+		&u.Role,
+		&u.Name,
+		&u.Email,
+		&u.IsEmailVerified,
+		&u.Password,
+		&u.Balance,
+		&u.CreatedAt,
+	); err != nil {
 		return nil, err
 	}
 	return u, nil

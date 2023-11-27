@@ -3,7 +3,6 @@ package database
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 
 	"github.com/thejixer/shop-api/internal/models"
 )
@@ -70,10 +69,10 @@ func (r *CartRepo) FindUsersItems(userId int) ([]*models.CartItem, error) {
 		WHERE c.userId = $1
 	`
 	rows, err := r.db.Query(query, userId)
-	defer rows.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	items := []*models.CartItem{}
 	for rows.Next() {
 		u, err := scanIntoCartItem(rows)
@@ -96,10 +95,6 @@ func (r *CartRepo) Remove(userId, productId int) error {
 }
 
 func scanIntoCartItem(rows *sql.Rows) (*models.CartItem, error) {
-	x, _ := rows.Columns()
-	fmt.Println("#############")
-	fmt.Printf("%+v \n", x)
-	fmt.Println("#############")
 	c := new(models.CartItem)
 	if err := rows.Scan(
 		&c.Quantity,

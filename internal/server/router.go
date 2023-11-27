@@ -29,4 +29,7 @@ func (s *APIServer) ApplyRoutes(e *echo.Echo) {
 	cart.DELETE("/:id", s.handlerService.RemoveFromCart, s.handlerService.AuthGaurd)
 
 	e.POST("/checkout", s.handlerService.CheckOut, s.handlerService.AuthGaurd)
+
+	order := e.Group("/order")
+	order.GET("/:id", s.handlerService.GetOrder, s.handlerService.AuthGaurd)
 }

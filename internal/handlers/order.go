@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -33,7 +35,7 @@ func (h *HandlerService) CheckOut(c echo.Context) error {
 		CreatedAt: time.Now().UTC(),
 	}
 
-	if _, err := h.store.OrderRepo.Create(thisOrder); err != nil {
+	if err := h.store.OrderRepo.Create(thisOrder); err != nil {
 		if strings.Contains(err.Error(), "your cart") {
 			return WriteReponse(c, http.StatusBadRequest, err.Error())
 		}
@@ -44,4 +46,39 @@ func (h *HandlerService) CheckOut(c echo.Context) error {
 	}
 
 	return WriteReponse(c, http.StatusCreated, "successfully submited your order")
+}
+
+func (h *HandlerService) GetOrder(c echo.Context) error {
+	fmt.Println("s")
+	id := c.Param("id")
+	orderId, err := strconv.Atoi(id)
+	if err != nil {
+		return WriteReponse(c, http.StatusBadRequest, "bad input")
+	}
+	me, err := GetMe(&c)
+	if err != nil {
+		return WriteReponse(c, http.StatusUnauthorized, "unathorized")
+	}
+
+	fmt.Println("x")
+	order, err := h.store.OrderRepo.FindById(orderId)
+	if err != nil {
+		return WriteReponse(c, http.StatusNotFound, "not found")
+	}
+	fmt.Println("xx")
+	if order.UserId != me.ID {
+		return WriteReponse(c, http.StatusUnauthorized, "unathorized")
+	}
+
+	fmt.Println("before order items")
+	orderItems, err := h.store.OrderRepo.FindOrderItemsOfSingleOrder(order.Id, me.ID)
+	if err != nil {
+		return WriteReponse(c, http.StatusInternalServerError, "oops, this one's on us")
+	}
+	fmt.Println("after order items")
+	meDto := dataprocesslayer.ConvertToUserDto(me)
+
+	thisOrder := dataprocesslayer.MakeOrder(order, orderItems, meDto)
+
+	return c.JSON(http.StatusOK, thisOrder)
 }

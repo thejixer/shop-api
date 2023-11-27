@@ -3,7 +3,6 @@ package database
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -107,10 +106,10 @@ func (r *ProductRepo) Find(text string, page, limit int) ([]*models.Product, int
 		FETCH NEXT $3 ROWS ONLY`
 	str := "%" + strings.ToLower(text) + "%"
 	rows, err := r.db.Query(query, offset, str, limit)
-	// defer rows.Close()
 	if err != nil {
 		return nil, 0, err
 	}
+	defer rows.Close()
 	products := []*models.Product{}
 	for rows.Next() {
 		u, err := scanIntoProducts(rows)
@@ -132,12 +131,15 @@ func (r *ProductRepo) Find(text string, page, limit int) ([]*models.Product, int
 }
 
 func scanIntoProducts(rows *sql.Rows) (*models.Product, error) {
-	x, _ := rows.Columns()
-	fmt.Println("#############")
-	fmt.Printf("%+v \n", x)
-	fmt.Println("#############")
 	p := new(models.Product)
-	if err := rows.Scan(&p.Id, &p.Title, &p.Price, &p.Quantity, &p.Description, &p.CreatedAt); err != nil {
+	if err := rows.Scan(
+		&p.Id,
+		&p.Title,
+		&p.Price,
+		&p.Quantity,
+		&p.Description,
+		&p.CreatedAt,
+	); err != nil {
 		return nil, err
 	}
 	return p, nil
