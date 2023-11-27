@@ -16,7 +16,9 @@ func (s *PostgresStore) createProductTable() error {
 		id SERIAL PRIMARY KEY,
 		title VARCHAR(100),
 		price DECIMAL,
+		CHECK (price>=0),
 		quantity integer,
+		CHECK (quantity>=0),
 		description VARCHAR(1000),
 		createdAt TIMESTAMP
 	)`

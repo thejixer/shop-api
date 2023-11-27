@@ -21,6 +21,7 @@ func (s *PostgresStore) createUserTable() error {
 		isEmailVerified BOOLEAN,
 		password VARCHAR,
 		balance DECIMAL,
+		CHECK (balance>=0),
 		createdAt TIMESTAMP
 	)`
 

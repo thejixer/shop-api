@@ -27,4 +27,6 @@ func (s *APIServer) ApplyRoutes(e *echo.Echo) {
 	cart.POST("/", s.handlerService.AddToCart, s.handlerService.AuthGaurd)
 	cart.GET("/", s.handlerService.GetMyCart, s.handlerService.AuthGaurd)
 	cart.DELETE("/:id", s.handlerService.RemoveFromCart, s.handlerService.AuthGaurd)
+
+	e.POST("/checkout", s.handlerService.CheckOut, s.handlerService.AuthGaurd)
 }

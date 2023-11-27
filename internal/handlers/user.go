@@ -453,7 +453,6 @@ func (h *HandlerService) ChargeBalance(c echo.Context) error {
 	}
 
 	if err := h.store.UserRepo.ChargeBalance(me.ID, body.Amount); err != nil {
-		fmt.Println(err)
 		return WriteReponse(c, http.StatusInternalServerError, "oops, this one's on us")
 	}
 

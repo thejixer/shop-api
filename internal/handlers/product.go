@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -94,7 +93,6 @@ func (h *HandlerService) GetProducts(c echo.Context) error {
 
 func (h *HandlerService) GetProduct(c echo.Context) error {
 
-	fmt.Println("im getting called")
 	id := c.Param("id")
 	productId, err := strconv.Atoi(id)
 	if err != nil {

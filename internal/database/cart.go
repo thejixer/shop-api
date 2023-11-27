@@ -34,7 +34,15 @@ func NewCartRepo(db *sql.DB) *CartRepo {
 func (r *CartRepo) Add(userId, productId, quantity int) error {
 
 	// there should be a way to execute both these at the same db trip
-	r.db.Exec("DELETE FROM cartitems WHERE cartitems.userId = $1 AND cartitems.productId = $2;", userId, productId)
+	r.db.Exec("DELETE FROM cartitems WHERE cartitems.userId = $1 AND cartitems.productId = $2", userId, productId)
+
+	var count int
+	r.db.QueryRow("SELECT count(id) FROM cartitems WHERE cartitems.userId = $1 AND cartitems.productId = $2", userId, productId).Scan(&count)
+
+	if count >= 10 {
+		return errors.New("you cant have more than 10 items in your cart")
+	}
+
 	query := `
 		INSERT INTO cartitems (userId, productId, quantity)
 		VALUES ($1, $2, $3) RETURNING id`
@@ -79,9 +87,8 @@ func (r *CartRepo) FindUsersItems(userId int) ([]*models.CartItem, error) {
 }
 
 func (r *CartRepo) Remove(userId, productId int) error {
-	x, err := r.db.Exec("DELETE FROM cartitems WHERE cartitems.userId = $1 AND cartitems.productId = $2;", userId, productId)
+	_, err := r.db.Exec("DELETE FROM cartitems WHERE cartitems.userId = $1 AND cartitems.productId = $2;", userId, productId)
 
-	fmt.Println(x)
 	if err != nil {
 		return err
 	}

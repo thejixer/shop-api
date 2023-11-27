@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -35,7 +34,6 @@ func (h *HandlerService) AddToCart(c echo.Context) error {
 	err2 := h.store.CartRepo.Add(me.ID, body.ProductId, body.Quantity)
 
 	if err2 != nil {
-		fmt.Println(err2)
 		return WriteReponse(c, http.StatusInternalServerError, "oops, this one's on us")
 	}
 
@@ -50,7 +48,6 @@ func (h *HandlerService) GetMyCart(c echo.Context) error {
 
 	items, err := h.store.CartRepo.FindUsersItems(me.ID)
 	if err != nil {
-		fmt.Println(err)
 		return WriteReponse(c, http.StatusInternalServerError, "oops. this one's on us")
 	}
 
