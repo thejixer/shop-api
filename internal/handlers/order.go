@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -23,6 +22,11 @@ func (h *HandlerService) CheckOut(c echo.Context) error {
 		return WriteReponse(c, http.StatusInternalServerError, "oops. this one's on us")
 	}
 
+	if len(cartItems) == 0 {
+		return WriteReponse(c, http.StatusBadRequest, "there is nothing in your cart")
+
+	}
+
 	user := dataprocesslayer.ConvertToUserDto(me)
 	cart := dataprocesslayer.ConvertItemsToCart(user, cartItems)
 	if user.Balance < cart.TotalPrice {
@@ -35,10 +39,7 @@ func (h *HandlerService) CheckOut(c echo.Context) error {
 		CreatedAt: time.Now().UTC(),
 	}
 
-	if err := h.store.OrderRepo.Create(thisOrder); err != nil {
-		if strings.Contains(err.Error(), "your cart") {
-			return WriteReponse(c, http.StatusBadRequest, err.Error())
-		}
+	if err := h.store.OrderRepo.Create(thisOrder, cartItems); err != nil {
 		if strings.Contains(err.Error(), "products_quantity_check") {
 			return WriteReponse(c, http.StatusBadRequest, "our shop does not have that much of one of your requested products")
 		}
@@ -49,7 +50,6 @@ func (h *HandlerService) CheckOut(c echo.Context) error {
 }
 
 func (h *HandlerService) GetOrder(c echo.Context) error {
-	fmt.Println("s")
 	id := c.Param("id")
 	orderId, err := strconv.Atoi(id)
 	if err != nil {
@@ -60,22 +60,18 @@ func (h *HandlerService) GetOrder(c echo.Context) error {
 		return WriteReponse(c, http.StatusUnauthorized, "unathorized")
 	}
 
-	fmt.Println("x")
 	order, err := h.store.OrderRepo.FindById(orderId)
 	if err != nil {
 		return WriteReponse(c, http.StatusNotFound, "not found")
 	}
-	fmt.Println("xx")
 	if order.UserId != me.ID {
 		return WriteReponse(c, http.StatusUnauthorized, "unathorized")
 	}
 
-	fmt.Println("before order items")
 	orderItems, err := h.store.OrderRepo.FindOrderItemsOfSingleOrder(order.Id, me.ID)
 	if err != nil {
 		return WriteReponse(c, http.StatusInternalServerError, "oops, this one's on us")
 	}
-	fmt.Println("after order items")
 	meDto := dataprocesslayer.ConvertToUserDto(me)
 
 	thisOrder := dataprocesslayer.MakeOrder(order, orderItems, meDto)

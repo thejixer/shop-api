@@ -3,7 +3,6 @@ package database
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 
 	"github.com/shopspring/decimal"
 	"github.com/thejixer/shop-api/internal/models"
@@ -43,83 +42,66 @@ func NewOrderRepo(db *sql.DB) *OrderRepo {
 	}
 }
 
-func getUsersCartItems(db *sql.DB, userId int) ([]*models.CartItem, error) {
-	query := `
-		Select c.quantity as quantity, p.id as ProductId, p.title as ProductTitle, p.Price as ProductPrice, p.quantity as ProductQuantity, p.description as ProductDescription
-		From cartitems c
-		JOIN products p 
-		ON c.productId = p.id
-		WHERE c.userId = $1
-	`
-	rows, err := db.Query(query, userId)
-	defer rows.Close()
-	if err != nil {
-		return nil, err
-	}
-	items := []*models.CartItem{}
-	for rows.Next() {
-		u, err := scanIntoCartItem(rows)
-		if err != nil {
-			return nil, err
-		}
-		items = append(items, u)
-	}
-	return items, nil
-}
+func (r *OrderRepo) Create(data models.Order, cartItems []*models.CartItem) error {
 
-func (r *OrderRepo) Create(data models.Order) error {
+	var totalPrice decimal.Decimal
 
-	userCartItems, err := getUsersCartItems(r.db, data.UserId)
+	for _, s := range cartItems {
+		x := (decimal.NewFromInt(int64(s.Quantity))).Mul(s.ProductPrice)
+		totalPrice = totalPrice.Add(x)
+	}
+
+	txn, err := r.db.Begin()
 	if err != nil {
 		return err
 	}
-	if len(userCartItems) == 0 {
-		return errors.New("there is nothing in your cart")
-	}
-	var totalPrice decimal.Decimal
 
-	for _, s := range userCartItems {
-		Quantity := decimal.NewFromInt(int64(s.Quantity))
-		tp := Quantity.Mul(s.ProductPrice)
-		totalPrice = totalPrice.Add(tp)
-	}
-
-	query := fmt.Sprintf(`
-		BEGIN TRANSACTION;
-
+	_, insertErr := txn.Exec(`
 		UPDATE USERS
-		SET balance = balance - %v
-		WHERE id = %v;
+		SET balance = balance - $1
+		WHERE id = $2;
+	`, totalPrice, data.UserId)
 
-		INSERT INTO orders (userId, status, totalPrice, createdAt)
-		values(%v, '%v', %v, Now());
-
-	`, totalPrice, data.UserId, data.UserId, data.Status, totalPrice)
-
-	for _, s := range userCartItems {
-		query += fmt.Sprintf(`INSERT INTO orderItems (orderId, productId, quantity, price)
-		values (currval('orders_id_seq'), %v, %v, %v);
-		
-		`, s.ProductId, s.Quantity, s.ProductPrice)
-		query += fmt.Sprintf(`DELETE FROM cartitems WHERE cartitems.userId = %v AND cartitems.productId = %v;
-		
-		`, data.UserId, s.ProductId)
-		query += fmt.Sprintf(`
-			UPDATE products
-			SET quantity = quantity - %v
-			WHERE id = %v;
-
-		`, s.Quantity, s.ProductId)
+	if insertErr != nil {
+		return insertErr
 	}
 
-	query += `
-		COMMIT;
-	`
+	_, insertOrderErr := txn.Exec(`
+		INSERT INTO orders (userId, status, totalPrice, createdAt)
+		values($1, $2, $3, Now());
+	`, data.UserId, data.Status, totalPrice)
 
-	_, transactionError := r.db.Exec(query)
+	if insertOrderErr != nil {
+		return insertOrderErr
+	}
 
-	if transactionError != nil {
-		return transactionError
+	for _, s := range cartItems {
+
+		_, err := txn.Exec(`INSERT INTO orderItems (orderId, productId, quantity, price)
+		values (currval('orders_id_seq'), $1, $2, $3);`, s.ProductId, s.Quantity, s.ProductPrice)
+		if err != nil {
+			return err
+		}
+
+		_, err2 := txn.Exec(`	
+			UPDATE products
+			SET quantity = quantity - $1
+			WHERE id = $2;`, s.Quantity, s.ProductId)
+
+		if err2 != nil {
+			return err2
+		}
+
+	}
+
+	_, cartDelErr := txn.Exec(`DELETE FROM cartitems WHERE cartitems.userId = $1`, data.UserId)
+	if cartDelErr != nil {
+		return cartDelErr
+	}
+
+	commitErr := txn.Commit()
+	if commitErr != nil {
+		return commitErr
 	}
 
 	return nil
@@ -147,7 +129,6 @@ func (r *OrderRepo) FindOrderItemsOfSingleOrder(orderId, userId int) ([]*models.
 		`
 	rows, err := r.db.Query(query, orderId)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 	defer rows.Close()

@@ -7,7 +7,7 @@ import (
 )
 
 type OrdeRepository interface {
-	Create(data Order) error
+	Create(data Order, cartItems []*CartItem) error
 	FindById(id int) (*Order, error)
 	FindOrderItemsOfSingleOrder(orderId, userId int) ([]*OrderItem, error)
 }
