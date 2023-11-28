@@ -55,3 +55,21 @@ type AddtoCartDto struct {
 type ChargeBalanceDto struct {
 	Amount float64 `json:"amount" validate:"required"`
 }
+
+type PointDto struct {
+	Lat float64 `json:"lat"`
+	Lon float64 `json:"lon"`
+}
+
+type CreateAddressDto struct {
+	Title         string  `json:"title" validate:"required"`
+	Lon           float64 `json:"lon" validate:"required"`
+	Lat           float64 `json:"lat" validate:"required"`
+	Address       string  `json:"address" validate:"required"`
+	RecieverName  string  `json:"recieverName" validate:"required"`
+	RecieverPhone string  `json:"recieverPhone" validate:"required"`
+}
+
+type CheckOutDto struct {
+	AddressId int `json:"addressId" validate:"required"`
+}

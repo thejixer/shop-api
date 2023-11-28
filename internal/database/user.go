@@ -74,7 +74,7 @@ func (r *UserRepo) FindById(id int) (*models.User, error) {
 		return nil, err
 	}
 	for rows.Next() {
-		return scanIntoUsers(rows)
+		return ScanIntoUsers(rows)
 	}
 
 	return nil, errors.New("not found")
@@ -85,7 +85,7 @@ func (r *UserRepo) FindByEmail(email string) (*models.User, error) {
 		return nil, err
 	}
 	for rows.Next() {
-		return scanIntoUsers(rows)
+		return ScanIntoUsers(rows)
 	}
 
 	return nil, errors.New("not found")
@@ -135,7 +135,7 @@ func (r *UserRepo) FindUsers(text string, page, limit int) ([]*models.User, int,
 	defer rows.Close()
 	users := []*models.User{}
 	for rows.Next() {
-		u, err := scanIntoUsers(rows)
+		u, err := ScanIntoUsers(rows)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -161,7 +161,7 @@ func (r *UserRepo) ChargeBalance(userId int, amount float64) error {
 	return nil
 }
 
-func scanIntoUsers(rows *sql.Rows) (*models.User, error) {
+func ScanIntoUsers(rows *sql.Rows) (*models.User, error) {
 	u := new(models.User)
 	if err := rows.Scan(
 		&u.ID,

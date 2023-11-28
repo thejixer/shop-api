@@ -30,6 +30,13 @@ func (s *APIServer) ApplyRoutes(e *echo.Echo) {
 
 	e.POST("/checkout", s.handlerService.CheckOut, s.handlerService.AuthGaurd)
 
+	address := e.Group("/address")
+	address.POST("/", s.handlerService.CreateAddress, s.handlerService.AuthGaurd)
+	address.GET("/", s.handlerService.GetMyAddresses, s.handlerService.AuthGaurd)
+	address.DELETE("/:id", s.handlerService.DeleteAddress, s.handlerService.AuthGaurd)
+
 	order := e.Group("/order")
 	order.GET("/:id", s.handlerService.GetOrder, s.handlerService.AuthGaurd)
+	order.GET("/", s.handlerService.GetMyOrders, s.handlerService.AuthGaurd)
+
 }

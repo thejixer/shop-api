@@ -15,6 +15,7 @@ type PostgresStore struct {
 	ProductRepo models.ProductRepository
 	CartRepo    models.CartRepository
 	OrderRepo   models.OrdeRepository
+	AddressRepo models.AddressRepository
 }
 
 func NewPostgresStore() (*PostgresStore, error) {
@@ -37,6 +38,7 @@ func NewPostgresStore() (*PostgresStore, error) {
 	productRepo := NewProductRepo(db)
 	CartRepo := NewCartRepo(db)
 	OrderRepo := NewOrderRepo(db)
+	AddressRepo := NewAddressRepo(db)
 
 	return &PostgresStore{
 		db:          db,
@@ -44,6 +46,7 @@ func NewPostgresStore() (*PostgresStore, error) {
 		ProductRepo: productRepo,
 		CartRepo:    CartRepo,
 		OrderRepo:   OrderRepo,
+		AddressRepo: AddressRepo,
 	}, nil
 }
 
@@ -62,6 +65,10 @@ func (s *PostgresStore) Init() error {
 	}
 
 	if err := s.createOrderItemTable(); err != nil {
+		return err
+	}
+
+	if err := s.createAddressTable(); err != nil {
 		return err
 	}
 
