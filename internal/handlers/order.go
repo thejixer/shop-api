@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -84,7 +85,8 @@ func (h *HandlerService) GetOrder(c echo.Context) error {
 	if err != nil {
 		return WriteReponse(c, http.StatusNotFound, "not found")
 	}
-	if order.UserId != me.ID {
+
+	if me.Role != "admin" && order.UserId != me.ID {
 		return WriteReponse(c, http.StatusUnauthorized, "unathorized")
 	}
 
@@ -149,4 +151,64 @@ func (h *HandlerService) GetMyOrders(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, data)
+}
+
+func (h *HandlerService) AdminGetOrders(c echo.Context) error {
+
+	p := c.QueryParam("page")
+	l := c.QueryParam("limit")
+	status := c.QueryParam("status")
+	u := c.QueryParam("userId")
+
+	var page int
+	var limit int
+	var err error
+
+	page, err = strconv.Atoi(p)
+	if err != nil {
+		page = 0
+	}
+	limit, err = strconv.Atoi(l)
+	if err != nil {
+		limit = 10
+	}
+	userId, err := strconv.Atoi(u)
+	if err != nil {
+		userId = 0
+	}
+
+	var meErr error
+	_, meErr = GetMe(&c)
+	if meErr != nil {
+		return WriteReponse(c, http.StatusUnauthorized, "unathorized")
+	}
+
+	fmt.Println("before query orders ")
+	fmt.Println(userId)
+	fmt.Println(status)
+	result, count, err := h.store.OrderRepo.QueryOrders(userId, status, page, limit)
+
+	fmt.Println(result)
+
+	var orders = make([]models.OrderDto, len(result))
+	var wg sync.WaitGroup
+
+	for i, o := range result {
+		wg.Add(1)
+		var makeOrderErr error
+		orders[i] = *new(models.OrderDto)
+		go h.store.OrderRepo.MakeOrder(o, &orders[i], &makeOrderErr, &wg)
+		if makeOrderErr != nil {
+			return WriteReponse(c, http.StatusInternalServerError, "oops this one's on us")
+		}
+	}
+	wg.Wait()
+
+	data := &models.LL_OrderDto{
+		Total:  count,
+		Result: orders,
+	}
+
+	return c.JSON(http.StatusOK, data)
+
 }

@@ -36,7 +36,9 @@ func (s *APIServer) ApplyRoutes(e *echo.Echo) {
 	address.DELETE("/:id", s.handlerService.DeleteAddress, s.handlerService.AuthGaurd)
 
 	order := e.Group("/order")
-	order.GET("/:id", s.handlerService.GetOrder, s.handlerService.AuthGaurd)
-	order.GET("/", s.handlerService.GetMyOrders, s.handlerService.AuthGaurd)
+	order.GET("/:id", s.handlerService.GetOrder, s.handlerService.Gaurd)
+	order.GET("/my-orders", s.handlerService.GetMyOrders, s.handlerService.AuthGaurd)
+	order.GET("/", s.handlerService.AdminGetOrders, s.handlerService.AdminGaurd)
+	// order.GET("/")
 
 }

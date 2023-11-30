@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 	dataprocesslayer "github.com/thejixer/shop-api/internal/data-process-layer"
 	"github.com/thejixer/shop-api/internal/models"
@@ -152,99 +151,6 @@ func (h *HandlerService) HandleLogin(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, models.TokenDTO{Token: tokenString})
 
-}
-
-func getToken(c *echo.Context) (string, error) {
-	req := (*c).Request()
-	authSlice := req.Header["Auth"]
-
-	if len(authSlice) == 0 {
-		return "", fmt.Errorf("token does not exist")
-	}
-
-	s := strings.Split(authSlice[0], " ")
-
-	if len(s) != 2 || s[0] != "ut" {
-		return "", fmt.Errorf("bad token format")
-	}
-
-	return s[1], nil
-}
-
-func generateMe(c *echo.Context, h *HandlerService) (*models.User, int, error) {
-	tokenString, err := getToken(c)
-
-	if err != nil {
-		return nil, http.StatusUnauthorized, errors.New("unathorized")
-	}
-
-	token, err := utils.VerifyToken(tokenString)
-
-	if err != nil || !token.Valid {
-		return nil, http.StatusUnauthorized, errors.New("unathorized")
-	}
-
-	claims := token.Claims.(jwt.MapClaims)
-
-	if claims["id"] == nil {
-		return nil, http.StatusUnauthorized, errors.New("unathorized")
-	}
-
-	i := claims["id"].(string)
-	userId, err := strconv.Atoi(i)
-	if err != nil {
-		return nil, http.StatusInternalServerError, errors.New("this one's on us")
-	}
-
-	thisUser, err := FindSingleUser(h, userId)
-
-	if err != nil || thisUser == nil {
-		return nil, http.StatusUnauthorized, errors.New("unathorized")
-	}
-
-	if !thisUser.IsEmailVerified {
-		return nil, http.StatusForbidden, errors.New("your email is not verified")
-	}
-
-	return thisUser, 0, nil
-
-}
-
-func (h *HandlerService) AuthGaurd(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
-
-		me, code, err := generateMe(&c, h)
-		if err != nil {
-			return WriteReponse(c, code, err.Error())
-		}
-
-		if me.Role != "user" {
-			return WriteReponse(c, http.StatusForbidden, "forbidden resources")
-		}
-
-		cc := CustomContext{c, me}
-		return next(cc)
-
-	}
-
-}
-
-func (h *HandlerService) AdminGaurd(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
-
-		me, code, err := generateMe(&c, h)
-		if err != nil || me == nil {
-			return WriteReponse(c, code, err.Error())
-		}
-
-		if me.Role != "admin" {
-			return WriteReponse(c, http.StatusForbidden, "forbidden resources")
-		}
-
-		cc := CustomContext{c, me}
-		return next(cc)
-
-	}
 }
 
 func GetMe(c *echo.Context) (*models.User, error) {
@@ -458,4 +364,21 @@ func (h *HandlerService) ChargeBalance(c echo.Context) error {
 
 	return WriteReponse(c, http.StatusAccepted, "successfully charged your account")
 
+}
+
+func getToken(c *echo.Context) (string, error) {
+	req := (*c).Request()
+	authSlice := req.Header["Auth"]
+
+	if len(authSlice) == 0 {
+		return "", fmt.Errorf("token does not exist")
+	}
+
+	s := strings.Split(authSlice[0], " ")
+
+	if len(s) != 2 || s[0] != "ut" {
+		return "", fmt.Errorf("bad token format")
+	}
+
+	return s[1], nil
 }

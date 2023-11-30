@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/shopspring/decimal"
@@ -223,9 +224,62 @@ func (r *OrderRepo) GetOrdersByUserId(userId, page, limit int) ([]*models.Order,
 	}
 
 	var count int
-	r.db.QueryRow("SELECT count(id) FROM orders WHERE userId = $1", userId).Scan(&count)
+	r.db.QueryRow("SELECT count(id) FROM orders WHERE userId = $1 ", userId).Scan(&count)
 
 	return orders, count, nil
+}
+
+func (r *OrderRepo) QueryOrders(userId int, status string, page, limit int) ([]*models.Order, int, error) {
+
+	userIdExists := userId != 0
+	statusExists := status != ""
+
+	var query string
+	var countQuery string
+	args := make([]any, 0)
+	countArgs := make([]any, 0)
+
+	if userIdExists && statusExists {
+		query = `SELECT * FROM orders WHERE userId = $1 AND status = $2 ORDER BY id desc OFFSET $3 ROWS FETCH NEXT $4 ROWS ONLY`
+		args = append(args, userId, status, page*limit, limit)
+		countQuery = `SELECT count(id) FROM orders WHERE userId = $1 AND status = $2;`
+		countArgs = append(countArgs, userId, status)
+	} else if !userIdExists && statusExists {
+		query = `SELECT * FROM orders WHERE status = $1 ORDER BY id desc OFFSET $2 ROWS FETCH NEXT $3 ROWS ONLY`
+		args = append(args, status, page*limit, limit)
+		countQuery = `SELECT count(id) FROM orders WHERE status = $1`
+		countArgs = append(countArgs, status)
+	} else if userIdExists && !statusExists {
+		query = `SELECT * FROM orders WHERE userId = $1 ORDER BY id desc OFFSET $2 ROWS FETCH NEXT $3 ROWS ONLY`
+		args = append(args, userId, page*limit, limit)
+		countQuery = `SELECT count(id) FROM orders WHERE userId = $1 `
+		countArgs = append(countArgs, userId)
+	} else if !userIdExists && !statusExists {
+		fmt.Println("this is running")
+		query = `SELECT * FROM orders ORDER BY id desc OFFSET $1 ROWS FETCH NEXT $2 ROWS ONLY`
+		args = append(args, page*limit, limit)
+		countQuery = `SELECT count(id) FROM orders`
+	}
+
+	rows, err := r.db.Query(query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+	orders := []*models.Order{}
+	for rows.Next() {
+		u, err := scanIntoOrders(rows)
+		if err != nil {
+			return nil, 0, err
+		}
+		orders = append(orders, u)
+	}
+
+	var count int
+	r.db.QueryRow(countQuery, countArgs...).Scan(&count)
+
+	return orders, count, nil
+
 }
 
 func scanIntoOrders(rows *sql.Rows) (*models.Order, error) {

@@ -12,6 +12,7 @@ type OrdeRepository interface {
 	FindById(id int) (*Order, error)
 	MakeOrder(order *Order, t *OrderDto, e *error, wg *sync.WaitGroup)
 	GetOrdersByUserId(userId, page, limit int) ([]*Order, int, error)
+	QueryOrders(userId int, status string, page, limit int) ([]*Order, int, error)
 }
 
 type Order struct {
@@ -51,6 +52,6 @@ type OrderDto struct {
 }
 
 type LL_OrderDto struct {
-	Total  int        `json:"total"`
+	Total  int        `json:"Total"`
 	Result []OrderDto `json:"result"`
 }
