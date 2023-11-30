@@ -6,21 +6,24 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lib/pq"
 	"github.com/thejixer/shop-api/internal/models"
 	"github.com/thejixer/shop-api/pkg/encryption"
 )
 
 func (s *PostgresStore) createUserTable() error {
 
-	query := `create table if not exists users (
+	query := `
+	create table if not exists users (
 		id SERIAL PRIMARY KEY,
 		role VARCHAR(50),
 		name VARCHAR(100),
-		email VARCHAR(100),
+		email VARCHAR(100) UNIQUE,
 		isEmailVerified BOOLEAN,
 		password VARCHAR,
 		balance DECIMAL,
 		CHECK (balance>=0),
+		permissions valid_permissions[],
 		createdAt TIMESTAMP
 	)`
 
@@ -39,7 +42,7 @@ func NewUserRepo(db *sql.DB) *UserRepo {
 	}
 }
 
-func (r *UserRepo) Create(name, email, password, role string, isEmailVerified bool) (*models.User, error) {
+func (r *UserRepo) Create(name, email, password, role string, isEmailVerified bool, permissions []string) (*models.User, error) {
 
 	hashedPassword, err := encryption.HashPassword(password)
 	if err != nil {
@@ -52,22 +55,36 @@ func (r *UserRepo) Create(name, email, password, role string, isEmailVerified bo
 		Role:            role,
 		Password:        hashedPassword,
 		IsEmailVerified: isEmailVerified,
+		Permissions:     permissions,
 		CreatedAt:       time.Now().UTC(),
 	}
 
 	query := `
-	INSERT INTO USERS (role, name, email, isEmailVerified, password, balance, createdAt)
-	VALUES ($1, $2, LOWER($3), $4, $5, $6, $7) RETURNING id`
+	INSERT INTO USERS (role, name, email, isEmailVerified, password, balance, permissions, createdAt)
+	VALUES ($1, $2, LOWER($3), $4, $5, $6, $7, $8) RETURNING id`
 	lastInsertId := 0
 
-	insertErr := r.db.QueryRow(query, newUser.Role, newUser.Name, newUser.Email, newUser.IsEmailVerified, newUser.Password, 0, newUser.CreatedAt).Scan(&lastInsertId)
+	insertErr := r.db.QueryRow(
+		query,
+		newUser.Role,
+		newUser.Name,
+		newUser.Email,
+		newUser.IsEmailVerified,
+		newUser.Password,
+		0,
+		pq.Array(newUser.Permissions),
+		newUser.CreatedAt,
+	).Scan(&lastInsertId)
+
 	if insertErr != nil {
 		return nil, insertErr
 	}
+
 	newUser.ID = lastInsertId
 
 	return newUser, nil
 }
+
 func (r *UserRepo) FindById(id int) (*models.User, error) {
 	rows, err := r.db.Query("SELECT * FROM USERS WHERE id = $1", id)
 	if err != nil {
@@ -79,6 +96,7 @@ func (r *UserRepo) FindById(id int) (*models.User, error) {
 
 	return nil, errors.New("not found")
 }
+
 func (r *UserRepo) FindByEmail(email string) (*models.User, error) {
 	rows, err := r.db.Query("SELECT * FROM USERS WHERE email = LOWER($1)", email)
 	if err != nil {
@@ -90,6 +108,7 @@ func (r *UserRepo) FindByEmail(email string) (*models.User, error) {
 
 	return nil, errors.New("not found")
 }
+
 func (r *UserRepo) VerifyEmail(email string) error {
 	query := `
 		UPDATE USERS
@@ -171,6 +190,7 @@ func ScanIntoUsers(rows *sql.Rows) (*models.User, error) {
 		&u.IsEmailVerified,
 		&u.Password,
 		&u.Balance,
+		pq.Array(&u.Permissions),
 		&u.CreatedAt,
 	); err != nil {
 		return nil, err

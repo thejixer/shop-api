@@ -26,6 +26,7 @@ func seedDB(store *database.PostgresStore) {
 		os.Getenv("MAIN_ADMIN_PASSWORD"),
 		"admin",
 		true,
+		[]string{"master"},
 	)
 }
 

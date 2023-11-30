@@ -13,11 +13,12 @@ import (
 
 func (s *PostgresStore) createOrderItemTable() error {
 	query := `
+
 	create table if not exists orders (
 		id SERIAL PRIMARY KEY,
 		userId integer,
 		addressId integer,
-		status VARCHAR(16),
+		status valid_status,
 		totalPrice DECIMAL,
 		createdAt TIMESTAMP
 	);

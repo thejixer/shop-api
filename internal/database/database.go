@@ -50,7 +50,14 @@ func NewPostgresStore() (*PostgresStore, error) {
 	}, nil
 }
 
+func (s *PostgresStore) CreateTypes() {
+	s.db.Query(`CREATE TYPE valid_permissions AS ENUM ('master', 'backoffice', 'stock', 'shipper');`)
+	s.db.Query(`CREATE TYPE valid_status AS ENUM ('created', 'verified', 'packaged', 'sent', 'delivered');`)
+}
+
 func (s *PostgresStore) Init() error {
+
+	s.CreateTypes()
 
 	if err := s.createUserTable(); err != nil {
 		return err

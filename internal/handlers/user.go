@@ -39,7 +39,7 @@ func (h *HandlerService) HangeSingup(c echo.Context) error {
 	}
 
 	var err error
-	thisUser, err = h.store.UserRepo.Create(body.Name, body.Email, body.Password, "user", false)
+	thisUser, err = h.store.UserRepo.Create(body.Name, body.Email, body.Password, "user", false, []string{})
 	if err != nil {
 		return WriteReponse(c, http.StatusBadRequest, err.Error())
 	}
@@ -99,6 +99,7 @@ func (h *HandlerService) HandleEmailVerification(c echo.Context) error {
 	thisUser, err := h.store.UserRepo.FindByEmail(email)
 
 	if err != nil {
+		fmt.Println(err)
 		return WriteReponse(c, http.StatusNotFound, "user not found")
 	}
 
@@ -133,6 +134,7 @@ func (h *HandlerService) HandleLogin(c echo.Context) error {
 
 	thisUser, err := h.store.UserRepo.FindByEmail(body.Email)
 	if err != nil {
+		fmt.Println(err)
 		return WriteReponse(c, http.StatusUnauthorized, "bad requesst")
 	}
 
@@ -267,26 +269,32 @@ func (h *HandlerService) HandleChangePassword(c echo.Context) error {
 
 func (h *HandlerService) CreateAdmin(c echo.Context) error {
 
+	me, err := GetMe(&c)
+	if err != nil {
+		return WriteReponse(c, http.StatusUnauthorized, "unathorized")
+	}
+
 	body := models.CreateAdminDTO{}
 
 	if err := c.Bind(&body); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid data")
 	}
 
 	if err := c.Validate(body); err != nil {
-		return WriteReponse(c, http.StatusBadRequest, "lack of data")
+		return WriteReponse(c, http.StatusBadRequest, "invalid data")
 	}
 
-	thisUser, _ := h.store.UserRepo.FindByEmail(body.Email)
-
-	if thisUser != nil {
-		return WriteReponse(c, http.StatusBadRequest, "this email already exists in the database")
+	hasPermission := PermissionChecker(me, "master")
+	if !hasPermission {
+		return WriteReponse(c, http.StatusForbidden, "forbidden resources")
 	}
 
-	var err error
-	thisUser, err = h.store.UserRepo.Create(body.Name, body.Email, body.Password, "admin", true)
+	thisUser, err := h.store.UserRepo.Create(body.Name, body.Email, body.Password, "admin", true, body.Permissions)
 	if err != nil {
-		return WriteReponse(c, http.StatusBadRequest, err.Error())
+		if strings.Contains(err.Error(), "users_email_key") {
+			return WriteReponse(c, http.StatusBadRequest, "email already exists")
+		}
+		return WriteReponse(c, http.StatusInternalServerError, "oops, this one's on us")
 	}
 
 	user := dataprocesslayer.ConvertToUserDto(thisUser)

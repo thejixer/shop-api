@@ -137,3 +137,14 @@ func generateMe(c *echo.Context, h *HandlerService) (*models.User, int, error) {
 	return thisUser, 0, nil
 
 }
+
+func PermissionChecker(u *models.User, s string) bool {
+
+	for _, i := range u.Permissions {
+		if i == "master" || i == s {
+			return true
+		}
+	}
+
+	return false
+}

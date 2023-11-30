@@ -12,9 +12,10 @@ type SignUpDTO struct {
 }
 
 type CreateAdminDTO struct {
-	Name     string `json:"name" validate:"required"`
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required"`
+	Name        string   `json:"name" validate:"required"`
+	Email       string   `json:"email" validate:"required,email"`
+	Password    string   `json:"password" validate:"required"`
+	Permissions []string `json:"permissions" validate:"min=1,dive,oneof=master backoffice stock shipper"`
 }
 
 type LoginDTO struct {
