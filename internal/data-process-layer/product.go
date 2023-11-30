@@ -15,15 +15,15 @@ func ConvertToProductDto(p *models.Product) models.ProductDto {
 
 func ConvertToLLProductDto(a []*models.Product, count int) models.LL_ProductDto {
 
-	var users []models.ProductDto
+	products := make([]models.ProductDto, 0)
 
 	for _, s := range a {
-		users = append(users, ConvertToProductDto(s))
+		products = append(products, ConvertToProductDto(s))
 	}
 
 	return models.LL_ProductDto{
 		Total:  count,
-		Result: users,
+		Result: products,
 	}
 
 }

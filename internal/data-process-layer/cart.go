@@ -24,7 +24,7 @@ func ConvertToCartItemDto(i *models.CartItem) models.CartItemDto {
 
 func ConvertItemsToCart(user models.UserDto, items []*models.CartItem) models.CartDto {
 
-	var arr []models.CartItemDto
+	arr := make([]models.CartItemDto, 0)
 
 	var temp decimal.Decimal
 

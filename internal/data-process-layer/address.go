@@ -22,7 +22,7 @@ func ConvertToAddressDto(a *models.Address, u models.UserDto) *models.AddressDto
 
 func ConvertToAddressDtos(a []*models.Address, u models.UserDto) []*models.AddressDto {
 
-	var arr []*models.AddressDto
+	arr := make([]*models.AddressDto, 0)
 
 	for _, e := range a {
 		item := ConvertToAddressDto(e, u)

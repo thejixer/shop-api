@@ -18,7 +18,7 @@ func ConvertToUserDto(u *models.User) models.UserDto {
 
 func ConvertToLLUserDto(a []*models.User, count int) models.LL_UserDto {
 
-	var users []models.UserDto
+	users := make([]models.UserDto, 0)
 
 	for _, s := range a {
 		users = append(users, ConvertToUserDto(s))
@@ -46,15 +46,15 @@ func ConvertToAdminDto(u *models.User) models.AdminDto {
 
 func ConvertToLLAdminDto(a []*models.User, count int) models.LL_AdminDto {
 
-	var users []models.AdminDto
+	admins := make([]models.AdminDto, 0)
 
 	for _, s := range a {
-		users = append(users, ConvertToAdminDto(s))
+		admins = append(admins, ConvertToAdminDto(s))
 	}
 
 	return models.LL_AdminDto{
 		Total:  count,
-		Result: users,
+		Result: admins,
 	}
 
 }
