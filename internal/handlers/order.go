@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -105,6 +104,7 @@ func (h *HandlerService) GetOrder(c echo.Context) error {
 }
 
 func (h *HandlerService) GetMyOrders(c echo.Context) error {
+	println("get my orders iscalling ")
 	p := c.QueryParam("page")
 	l := c.QueryParam("limit")
 
@@ -183,12 +183,7 @@ func (h *HandlerService) AdminGetOrders(c echo.Context) error {
 		return WriteReponse(c, http.StatusUnauthorized, "unathorized")
 	}
 
-	fmt.Println("before query orders ")
-	fmt.Println(userId)
-	fmt.Println(status)
 	result, count, err := h.store.OrderRepo.QueryOrders(userId, status, page, limit)
-
-	fmt.Println(result)
 
 	var orders = make([]models.OrderDto, len(result))
 	var wg sync.WaitGroup
@@ -210,5 +205,179 @@ func (h *HandlerService) AdminGetOrders(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, data)
+
+}
+
+func (h *HandlerService) VerifyOrder(c echo.Context) error {
+	id := c.Param("id")
+	orderId, err := strconv.Atoi(id)
+	if err != nil {
+		return WriteReponse(c, http.StatusBadRequest, "bad input")
+	}
+	me, err := GetMe(&c)
+	if err != nil {
+		return WriteReponse(c, http.StatusUnauthorized, "unathorized")
+	}
+	if hasPermission := PermissionChecker(me, "backoffice"); !hasPermission {
+		return WriteReponse(c, http.StatusForbidden, "forbidden resources")
+	}
+	order, err := h.store.OrderRepo.FindById(orderId)
+	if err != nil {
+		return WriteReponse(c, http.StatusNotFound, "not found")
+	}
+	if order.Status != "created" {
+		return WriteReponse(c, http.StatusBadRequest, "bad request")
+	}
+	updateErr := h.store.OrderRepo.SetStatus(orderId, "verified")
+	if updateErr != nil {
+		return WriteReponse(c, http.StatusInternalServerError, "oops this one's on us")
+	}
+
+	return WriteReponse(c, http.StatusAccepted, "successfully updated the order")
+
+}
+
+func (h *HandlerService) PackageOrder(c echo.Context) error {
+	id := c.Param("id")
+	orderId, err := strconv.Atoi(id)
+	if err != nil {
+		return WriteReponse(c, http.StatusBadRequest, "bad input")
+	}
+
+	me, err := GetMe(&c)
+	if err != nil {
+		return WriteReponse(c, http.StatusUnauthorized, "unathorized")
+	}
+	if hasPermission := PermissionChecker(me, "stock"); !hasPermission {
+		return WriteReponse(c, http.StatusForbidden, "forbidden resources")
+	}
+
+	order, err := h.store.OrderRepo.FindById(orderId)
+	if err != nil {
+		return WriteReponse(c, http.StatusNotFound, "not found")
+	}
+	if order.Status != "verified" {
+		return WriteReponse(c, http.StatusBadRequest, "bad request")
+	}
+
+	updateErr := h.store.OrderRepo.SetStatus(orderId, "packaged")
+	if updateErr != nil {
+		return WriteReponse(c, http.StatusInternalServerError, "oops this one's on us")
+	}
+
+	return WriteReponse(c, http.StatusAccepted, "successfully updated the order")
+
+}
+
+func (h *HandlerService) SendOrder(c echo.Context) error {
+	id := c.Param("id")
+	orderId, err := strconv.Atoi(id)
+	if err != nil {
+		return WriteReponse(c, http.StatusBadRequest, "bad input")
+	}
+
+	me, err := GetMe(&c)
+	if err != nil {
+		return WriteReponse(c, http.StatusUnauthorized, "unathorized")
+	}
+	if hasPermission := PermissionChecker(me, "backoffice"); !hasPermission {
+		return WriteReponse(c, http.StatusForbidden, "forbidden resources")
+	}
+
+	order, err := h.store.OrderRepo.FindById(orderId)
+	if err != nil {
+		return WriteReponse(c, http.StatusNotFound, "not found")
+	}
+	if order.Status != "packaged" {
+		return WriteReponse(c, http.StatusBadRequest, "bad request")
+	}
+
+	if err := h.redisStore.CreateShipment(order.Id, CustomUUID(6)); err != nil {
+		return WriteReponse(c, http.StatusInternalServerError, "oops this one's on us")
+	}
+
+	updateErr := h.store.OrderRepo.SetStatus(orderId, "sent")
+	if updateErr != nil {
+		return WriteReponse(c, http.StatusInternalServerError, "oops this one's on us")
+	}
+
+	return WriteReponse(c, http.StatusAccepted, "successfully updated the order")
+
+}
+
+func (h *HandlerService) GetShipmentCode(c echo.Context) error {
+	me, err := GetMe(&c)
+	if err != nil {
+		return WriteReponse(c, http.StatusUnauthorized, "unathorized")
+	}
+	id := c.Param("id")
+	orderId, err := strconv.Atoi(id)
+	if err != nil {
+		return WriteReponse(c, http.StatusBadRequest, "bad input")
+	}
+	order, err := h.store.OrderRepo.FindById(orderId)
+	if err != nil {
+		return WriteReponse(c, http.StatusNotFound, "not found")
+	}
+	if order.UserId != me.ID {
+		return WriteReponse(c, http.StatusForbidden, "forbidden")
+	}
+
+	code, err := h.redisStore.GetShipmentCode(order.Id)
+
+	return c.JSON(http.StatusOK, code)
+}
+
+func (h *HandlerService) DeliverOrder(c echo.Context) error {
+
+	body := models.DeliverOrderDto{}
+
+	if err := c.Bind(&body); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	if err := c.Validate(body); err != nil {
+		return WriteReponse(c, http.StatusBadRequest, "invalid data")
+	}
+	id := c.Param("id")
+	orderId, err := strconv.Atoi(id)
+	if err != nil {
+		return WriteReponse(c, http.StatusBadRequest, "invalid data")
+	}
+
+	me, err := GetMe(&c)
+	if err != nil {
+		return WriteReponse(c, http.StatusUnauthorized, "unathorized")
+	}
+
+	if hasPermission := PermissionChecker(me, "shipper"); !hasPermission {
+		return WriteReponse(c, http.StatusForbidden, "forbidden resources")
+	}
+
+	order, err := h.store.OrderRepo.FindById(orderId)
+	if err != nil {
+		return WriteReponse(c, http.StatusNotFound, "not found")
+	}
+	if order.Status != "sent" {
+		return WriteReponse(c, http.StatusBadRequest, "bad request")
+	}
+
+	code, err := h.redisStore.GetShipmentCode(order.Id)
+	if err != nil {
+		return WriteReponse(c, http.StatusInternalServerError, "oops, this one's on us")
+	}
+
+	if code != body.Code {
+		return WriteReponse(c, http.StatusForbidden, "forbidden resources")
+	}
+
+	updateErr := h.store.OrderRepo.SetStatus(orderId, "delivered")
+	if updateErr != nil {
+		return WriteReponse(c, http.StatusInternalServerError, "oops this one's on us")
+	}
+
+	go h.redisStore.DelShipment(order.Id)
+
+	return WriteReponse(c, http.StatusAccepted, "successfully updated the order")
 
 }

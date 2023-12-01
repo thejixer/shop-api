@@ -175,6 +175,17 @@ func (h *HandlerService) HandleMe(c echo.Context) error {
 	return c.JSON(http.StatusOK, user)
 }
 
+func (h *HandlerService) HandleAdminMe(c echo.Context) error {
+	me, err := GetMe(&c)
+	if err != nil {
+		return WriteReponse(c, http.StatusUnauthorized, "unathorized")
+	}
+
+	admin := dataprocesslayer.ConvertToAdminDto(me)
+
+	return c.JSON(http.StatusOK, admin)
+}
+
 func (h *HandlerService) HandleRequestChangePassword(c echo.Context) error {
 	body := models.RequestChangePasswordDTO{}
 
@@ -284,8 +295,7 @@ func (h *HandlerService) CreateAdmin(c echo.Context) error {
 		return WriteReponse(c, http.StatusBadRequest, "invalid data")
 	}
 
-	hasPermission := PermissionChecker(me, "master")
-	if !hasPermission {
+	if hasPermission := PermissionChecker(me, "master"); !hasPermission {
 		return WriteReponse(c, http.StatusForbidden, "forbidden resources")
 	}
 
@@ -371,6 +381,41 @@ func (h *HandlerService) ChargeBalance(c echo.Context) error {
 	}
 
 	return WriteReponse(c, http.StatusAccepted, "successfully charged your account")
+
+}
+
+func (h *HandlerService) UpdatePermissions(c echo.Context) error {
+	me, err := GetMe(&c)
+	if err != nil {
+		return WriteReponse(c, http.StatusUnauthorized, "unathorized")
+	}
+
+	body := models.UpdatePermissionDto{}
+
+	if err := c.Bind(&body); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid input")
+	}
+
+	if err := c.Validate(body); err != nil {
+		return WriteReponse(c, http.StatusBadRequest, "invalid input")
+	}
+
+	if hasPermission := PermissionChecker(me, "master"); !hasPermission {
+		return WriteReponse(c, http.StatusForbidden, "forbidden resources")
+	}
+
+	if thatUser, err := h.store.UserRepo.FindById(body.UserId); err != nil || thatUser.Role != "admin" {
+		return WriteReponse(c, http.StatusBadRequest, "bad request")
+	}
+
+	if err := h.store.UserRepo.UpdatePermissions(body.UserId, body.Permissions); err != nil {
+		fmt.Println(err)
+		return WriteReponse(c, http.StatusInternalServerError, "oops, this one's on us")
+	}
+
+	go h.redisStore.DelUser(body.UserId)
+
+	return WriteReponse(c, http.StatusAccepted, "successfully updated users permissions")
 
 }
 

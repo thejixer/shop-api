@@ -162,3 +162,42 @@ func (rc *RedisStore) GetUser(id int) *models.User {
 
 	return &u
 }
+func (rc *RedisStore) DelUser(id int) error {
+	key := fmt.Sprintf("u-%v", id)
+	_, err := rc.rdb.Del(rc.ctx, key).Result()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (rc *RedisStore) CreateShipment(orderId int, s string) error {
+	key := fmt.Sprintf("ship-%v", orderId)
+
+	err := rc.rdb.Set(rc.ctx, key, s, 0).Err()
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rc *RedisStore) GetShipmentCode(orderId int) (string, error) {
+	key := fmt.Sprintf("ship-%v", orderId)
+	val, err := rc.rdb.Get(rc.ctx, key).Result()
+	if err != nil {
+		return "", err
+	}
+
+	return val, nil
+}
+
+func (rc *RedisStore) DelShipment(orderId int) error {
+	key := fmt.Sprintf("ship-%v", orderId)
+	_, err := rc.rdb.Del(rc.ctx, key).Result()
+	if err != nil {
+		return err
+	}
+	return nil
+}

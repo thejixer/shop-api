@@ -74,3 +74,12 @@ type CreateAddressDto struct {
 type CheckOutDto struct {
 	AddressId int `json:"addressId" validate:"required"`
 }
+
+type UpdatePermissionDto struct {
+	Permissions []string `json:"permissions" validate:"min=1,dive,oneof=master backoffice stock shipper"`
+	UserId      int      `json:"userId" validate:"required"`
+}
+
+type DeliverOrderDto struct {
+	Code string `json:"code" validate:"required"`
+}

@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"errors"
+	"math/rand"
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
@@ -15,6 +17,18 @@ import (
 
 func WriteReponse(c echo.Context, s int, m string) error {
 	return c.JSON(s, models.ResponseDTO{Msg: m, StatusCode: s})
+}
+
+func CustomUUID(n int) string {
+	var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz123456789")
+
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[r.Intn(len(letterRunes))]
+	}
+	return string(b)
 }
 
 func CreateUUID() string {

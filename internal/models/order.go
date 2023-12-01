@@ -13,6 +13,7 @@ type OrdeRepository interface {
 	MakeOrder(order *Order, t *OrderDto, e *error, wg *sync.WaitGroup)
 	GetOrdersByUserId(userId, page, limit int) ([]*Order, int, error)
 	QueryOrders(userId int, status string, page, limit int) ([]*Order, int, error)
+	SetStatus(id int, status string) error
 }
 
 type Order struct {

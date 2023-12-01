@@ -3,11 +3,13 @@ package database
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
 	"github.com/lib/pq"
 	"github.com/thejixer/shop-api/internal/models"
+	"github.com/thejixer/shop-api/internal/utils"
 	"github.com/thejixer/shop-api/pkg/encryption"
 )
 
@@ -137,7 +139,7 @@ func (r *UserRepo) UpdatePassword(email, password string) error {
 	_, updateErr := r.db.Exec(query, email, hashedPassword)
 
 	if updateErr != nil {
-		return err
+		return updateErr
 	}
 
 	return nil
@@ -174,6 +176,24 @@ func (r *UserRepo) ChargeBalance(userId int, amount float64) error {
 		WHERE id = $2
 	`
 	_, err := r.db.Exec(query, amount, userId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *UserRepo) UpdatePermissions(id int, permissions []string) error {
+
+	permissions = utils.RemoveDuplicate[string](permissions)
+
+	query := `
+		UPDATE USERS
+		SET permissions = $1
+		WHERE (id = $2)
+	`
+
+	_, err := r.db.Exec(query, pq.Array(permissions), id)
+	fmt.Println("err : ", err)
 	if err != nil {
 		return err
 	}

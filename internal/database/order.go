@@ -283,6 +283,22 @@ func (r *OrderRepo) QueryOrders(userId int, status string, page, limit int) ([]*
 
 }
 
+func (r *OrderRepo) SetStatus(id int, status string) error {
+
+	query := `
+		UPDATE orders
+		SET status = $1
+		WHERE id = $2;
+	`
+	_, err := r.db.Exec(query, status, id)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func scanIntoOrders(rows *sql.Rows) (*models.Order, error) {
 	o := new(models.Order)
 

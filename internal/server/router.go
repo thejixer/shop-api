@@ -9,8 +9,9 @@ func (s *APIServer) ApplyRoutes(e *echo.Echo) {
 	s.ApplyAuthRoutes(e)
 
 	admin := e.Group("/admin")
-	admin.POST("/me", s.handlerService.HandleMe, s.handlerService.AdminGaurd)
+	admin.POST("/me", s.handlerService.HandleAdminMe, s.handlerService.AdminGaurd)
 	admin.POST("/create", s.handlerService.CreateAdmin, s.handlerService.AdminGaurd)
+	admin.POST("/update-permissions", s.handlerService.UpdatePermissions, s.handlerService.AdminGaurd)
 
 	user := e.Group("/user")
 	user.GET("/", s.handlerService.GetUsers, s.handlerService.AdminGaurd)
@@ -36,9 +37,13 @@ func (s *APIServer) ApplyRoutes(e *echo.Echo) {
 	address.DELETE("/:id", s.handlerService.DeleteAddress, s.handlerService.AuthGaurd)
 
 	order := e.Group("/order")
-	order.GET("/:id", s.handlerService.GetOrder, s.handlerService.Gaurd)
+	order.GET("/single/:id", s.handlerService.GetOrder, s.handlerService.Gaurd)
 	order.GET("/my-orders", s.handlerService.GetMyOrders, s.handlerService.AuthGaurd)
 	order.GET("/", s.handlerService.AdminGetOrders, s.handlerService.AdminGaurd)
-	// order.GET("/")
 
+	order.POST("/verify/:id", s.handlerService.VerifyOrder, s.handlerService.AdminGaurd)
+	order.POST("/package/:id", s.handlerService.PackageOrder, s.handlerService.AdminGaurd)
+	order.POST("/send/:id", s.handlerService.SendOrder, s.handlerService.AdminGaurd)
+	order.GET("/shipment-code/:id", s.handlerService.GetShipmentCode, s.handlerService.AuthGaurd)
+	order.POST("/deliver/:id", s.handlerService.DeliverOrder, s.handlerService.AdminGaurd)
 }
