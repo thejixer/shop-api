@@ -46,4 +46,5 @@ func (s *APIServer) ApplyRoutes(e *echo.Echo) {
 	order.POST("/send/:id", s.handlerService.SendOrder, s.handlerService.AdminGaurd)
 	order.GET("/shipment-code/:id", s.handlerService.GetShipmentCode, s.handlerService.AuthGaurd)
 	order.POST("/deliver/:id", s.handlerService.DeliverOrder, s.handlerService.AdminGaurd)
+	order.GET("/pdf/:id", s.handlerService.DownloadOrderPDF, s.handlerService.Gaurd)
 }

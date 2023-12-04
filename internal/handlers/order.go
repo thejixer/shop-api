@@ -10,6 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 	dataprocesslayer "github.com/thejixer/shop-api/internal/data-process-layer"
 	"github.com/thejixer/shop-api/internal/models"
+	"github.com/thejixer/shop-api/internal/pdf"
 )
 
 func (h *HandlerService) CheckOut(c echo.Context) error {
@@ -104,7 +105,6 @@ func (h *HandlerService) GetOrder(c echo.Context) error {
 }
 
 func (h *HandlerService) GetMyOrders(c echo.Context) error {
-	println("get my orders iscalling ")
 	p := c.QueryParam("page")
 	l := c.QueryParam("limit")
 
@@ -380,4 +380,43 @@ func (h *HandlerService) DeliverOrder(c echo.Context) error {
 
 	return WriteReponse(c, http.StatusAccepted, "successfully updated the order")
 
+}
+
+func (h *HandlerService) DownloadOrderPDF(c echo.Context) error {
+	id := c.Param("id")
+	orderId, err := strconv.Atoi(id)
+	if err != nil {
+		return WriteReponse(c, http.StatusBadRequest, "bad input")
+	}
+	me, err := GetMe(&c)
+	if err != nil {
+		return WriteReponse(c, http.StatusUnauthorized, "unathorized")
+	}
+
+	order, err := h.store.OrderRepo.FindById(orderId)
+	if err != nil {
+		return WriteReponse(c, http.StatusNotFound, "not found")
+	}
+
+	if me.Role != "admin" && order.UserId != me.ID {
+		return WriteReponse(c, http.StatusUnauthorized, "unathorized")
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	var makeOrderErr error
+	thisOrder := new(models.OrderDto)
+	go h.store.OrderRepo.MakeOrder(order, thisOrder, &makeOrderErr, &wg)
+	wg.Wait()
+
+	if makeOrderErr != nil {
+		return WriteReponse(c, http.StatusInternalServerError, "oops this one's on us")
+	}
+
+	pdfAddress, err := pdf.GeneratePDF(thisOrder)
+	if err != nil {
+		return WriteReponse(c, http.StatusInternalServerError, "oops this one's on us")
+	}
+
+	return c.File(pdfAddress)
 }
