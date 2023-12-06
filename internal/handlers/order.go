@@ -40,6 +40,7 @@ func (h *HandlerService) CheckOut(c echo.Context) error {
 
 	user := dataprocesslayer.ConvertToUserDto(me)
 	cart := dataprocesslayer.ConvertItemsToCart(user, cartItems)
+
 	if user.Balance < cart.TotalPrice {
 		return WriteReponse(c, http.StatusBadRequest, "you don't have enough credit, pleasse charge your account")
 	}

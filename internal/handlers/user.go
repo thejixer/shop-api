@@ -307,7 +307,8 @@ func (h *HandlerService) CreateAdmin(c echo.Context) error {
 		return WriteReponse(c, http.StatusInternalServerError, "oops, this one's on us")
 	}
 
-	user := dataprocesslayer.ConvertToUserDto(thisUser)
+	user := dataprocesslayer.ConvertToAdminDto(thisUser)
+	fmt.Println("user : ", user)
 	return c.JSON(http.StatusOK, user)
 }
 
@@ -379,6 +380,8 @@ func (h *HandlerService) ChargeBalance(c echo.Context) error {
 	if err := h.store.UserRepo.ChargeBalance(me.ID, body.Amount); err != nil {
 		return WriteReponse(c, http.StatusInternalServerError, "oops, this one's on us")
 	}
+
+	h.redisStore.DelUser(me.ID)
 
 	return WriteReponse(c, http.StatusAccepted, "successfully charged your account")
 

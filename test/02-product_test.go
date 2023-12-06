@@ -4,28 +4,19 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/thejixer/shop-api/internal/models"
 )
 
-func TestAdminLogin(t *testing.T) {
+/*
 
-	bodyString := fmt.Sprintf(`{ "email": "%v", "password": "%v" }`, os.Getenv("MAIN_ADMIN_EMAIL"), os.Getenv("MAIN_ADMIN_PASSWORD"))
+	1) create a product
+	2) edit that product
+	3) get that single product
+	4) get all products
 
-	body := []byte(bodyString)
-	res := Fetch("POST", "auth/login", "", bytes.NewBuffer(body), t)
-
-	result := models.TokenDTO{}
-	json.Unmarshal(res, &result)
-	if len(result.Token) < 10 {
-		t.Errorf("expected to get a token but got wierd stuff")
-	}
-
-	SetContext("admin_token", result.Token)
-
-}
+*/
 
 func TestCreateProduct(t *testing.T) {
 	adminToken := fmt.Sprintf("%v", GetContect("admin_token"))
@@ -55,7 +46,10 @@ func TestCreateProduct(t *testing.T) {
 	}
 
 	SetContext("p1", product)
-
+	res = Fetch("POST", "product/", adminToken, bytes.NewBuffer(body), t)
+	product2 := models.ProductDto{}
+	json.Unmarshal(res, &product2)
+	SetContext("p2", product2)
 }
 
 func TestEditProduct(t *testing.T) {
@@ -73,9 +67,6 @@ func TestEditProduct(t *testing.T) {
 	res := Fetch("POST", fmt.Sprintf("product/%v", p1.Id), adminToken, bytes.NewBuffer(body), t)
 	result := models.ProductDto{}
 	json.Unmarshal(res, &result)
-
-	t.Log(result)
-
 	if result.Price != expectedPrice {
 		t.Errorf("expected to get the price of %v but got %v", expectedPrice, result.Price)
 	}
@@ -97,9 +88,9 @@ func TestGetSingleProduct(t *testing.T) {
 
 func TestGetProducts(t *testing.T) {
 	res := Fetch("GET", "product/?", "", nil, t)
-	result := []models.ProductDto{}
+	result := models.LL_ProductDto{}
 	json.Unmarshal(res, &result)
-	if len(result) < 1 {
+	if result.Total < 1 {
 		t.Errorf("expected to get at least 1 product back but got nothing")
 	}
 }

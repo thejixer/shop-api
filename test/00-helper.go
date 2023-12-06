@@ -50,6 +50,7 @@ func Fetch(
 	req, err := http.NewRequest(method, fmt.Sprintf("%v/%v", Domain, url), body)
 	if err != nil {
 		t.Error("server aint reachable")
+		return nil
 	}
 	if token != "" {
 		authHeader := fmt.Sprintf("ut %v", token)
@@ -60,11 +61,13 @@ func Fetch(
 	resp, err := client.Do(req)
 	if err != nil {
 		t.Error("server aint reachable")
+		return nil
 	}
 
 	data, er := io.ReadAll(resp.Body)
 	if er != nil {
 		t.Error("server aint reachable")
+		return nil
 	}
 	return data
 }
