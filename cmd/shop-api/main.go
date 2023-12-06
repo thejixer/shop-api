@@ -11,6 +11,7 @@ import (
 	"github.com/thejixer/shop-api/internal/handlers"
 	"github.com/thejixer/shop-api/internal/mailer"
 	"github.com/thejixer/shop-api/internal/redis"
+	"github.com/thejixer/shop-api/internal/schedueler"
 	"github.com/thejixer/shop-api/internal/server"
 )
 
@@ -63,8 +64,9 @@ func main() {
 		log.Fatal("could not connect to the redis: ", err)
 	}
 	mailerService := mailer.NewMailerService()
+	scheduelerService := schedueler.NewTaskSchedueler(mailerService)
 
-	handlerService := handlers.NewHandlerService(store, redisStore, mailerService)
+	handlerService := handlers.NewHandlerService(store, redisStore, mailerService, scheduelerService)
 
 	apiServer := server.NewAPIServer(listenAddr, handlerService)
 	apiServer.Run()

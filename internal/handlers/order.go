@@ -301,6 +301,14 @@ func (h *HandlerService) SendOrder(c echo.Context) error {
 		return WriteReponse(c, http.StatusInternalServerError, "oops this one's on us")
 	}
 
+	var wg sync.WaitGroup
+	wg.Add(1)
+	var makeOrderErr error
+	thisOrder := new(models.OrderDto)
+	go h.store.OrderRepo.MakeOrder(order, thisOrder, &makeOrderErr, &wg)
+	wg.Wait()
+	h.scheduelerService.SchedueleShipmentNotification(thisOrder)
+
 	return WriteReponse(c, http.StatusAccepted, "successfully updated the order")
 
 }

@@ -113,3 +113,40 @@ func (m *MailerService) SendPasswordChangeRequestEmail(u *models.User, c string)
 	fmt.Println("Email Sent Successfully!")
 	return nil
 }
+
+func (m *MailerService) NotifyShipmentEmail(order *models.OrderDto) error {
+
+	env := os.Getenv("ENVIROMENT")
+	if env == "DEV" || env == "TEST" {
+		devPrintSkipEmail(env)
+		return nil
+	}
+
+	subject := "Subject: shipment notification !\n"
+	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
+	body := fmt.Sprintf(`
+		<html>
+			<body>
+				<h2> Hello Dear %v </h2>
+				<div>
+					your package has been sent and will be delivered soon to %v at the address below <br />
+					<p> %v </p>
+				</div>
+			</body>
+		</html>
+		`, order.User.Name, order.Address.RecieverName, order.Address.Address)
+	msg := fmt.Sprintf("%v%v%v", subject, mime, body)
+	message := []byte(msg)
+
+	to := []string{
+		order.User.Email,
+	}
+
+	addr := fmt.Sprintf("%v:%v", m.smtpHost, m.smtpPort)
+	err := smtp.SendMail(addr, m.auth, m.from, to, message)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Email Sent Successfully!")
+	return nil
+}
