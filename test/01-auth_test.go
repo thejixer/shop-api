@@ -131,6 +131,8 @@ func TestMe(t *testing.T) {
 		t.Error("expected to get u1's details but didn't")
 	}
 
+	SetContext("u1Data", me)
+
 }
 
 func TestRequestChangePassword(t *testing.T) {

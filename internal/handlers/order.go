@@ -385,7 +385,7 @@ func (h *HandlerService) DeliverOrder(c echo.Context) error {
 		return WriteReponse(c, http.StatusInternalServerError, "oops this one's on us")
 	}
 
-	go h.redisStore.DelShipment(order.Id)
+	h.redisStore.DelShipment(order.Id)
 
 	return WriteReponse(c, http.StatusAccepted, "successfully updated the order")
 

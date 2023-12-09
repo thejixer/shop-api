@@ -56,7 +56,7 @@ func FindSingleUser(h *HandlerService, id int) (*models.User, error) {
 		return nil, errors.New("not found")
 	}
 
-	go h.redisStore.CacheUser(thisUser)
+	h.redisStore.CacheUser(thisUser)
 
 	return thisUser, nil
 }

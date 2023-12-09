@@ -3,7 +3,6 @@ package database
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 
 	"github.com/thejixer/shop-api/internal/models"
 )
@@ -48,7 +47,6 @@ func (r *AddressRepo) Create(a *models.Address) (*models.Address, error) {
 
 	insertErr := r.db.QueryRow(query, a.UserId, a.Title, a.Lon, a.Lat, a.Address, a.RecieverName, a.RecieverPhone).Scan(&lastInsertId)
 	if insertErr != nil {
-		fmt.Println(insertErr)
 		return nil, insertErr
 	}
 

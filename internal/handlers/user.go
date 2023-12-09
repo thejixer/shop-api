@@ -99,7 +99,6 @@ func (h *HandlerService) HandleEmailVerification(c echo.Context) error {
 	thisUser, err := h.store.UserRepo.FindByEmail(email)
 
 	if err != nil {
-		fmt.Println(err)
 		return WriteReponse(c, http.StatusNotFound, "user not found")
 	}
 
@@ -108,7 +107,7 @@ func (h *HandlerService) HandleEmailVerification(c echo.Context) error {
 	}
 
 	updateErr := h.store.UserRepo.VerifyEmail(email)
-	go h.redisStore.DeleteEmailVerificationCode(email)
+	h.redisStore.DeleteEmailVerificationCode(email)
 	if updateErr != nil {
 		return WriteReponse(c, http.StatusInternalServerError, "this one's on us")
 	}
@@ -134,7 +133,6 @@ func (h *HandlerService) HandleLogin(c echo.Context) error {
 
 	thisUser, err := h.store.UserRepo.FindByEmail(body.Email)
 	if err != nil {
-		fmt.Println(err)
 		return WriteReponse(c, http.StatusUnauthorized, "bad requesst")
 	}
 
@@ -238,7 +236,7 @@ func (h *HandlerService) HandleVerifyChangePasswordRequest(c echo.Context) error
 		return WriteReponse(c, http.StatusBadRequest, "code doesnt match")
 	}
 
-	go h.redisStore.DeletePasswordChangeRequest(thisUser.Email)
+	h.redisStore.DeletePasswordChangeRequest(thisUser.Email)
 	redisErr := h.redisStore.CreatePasswordChangePermission(thisUser.Email, code)
 	if redisErr != nil {
 		return WriteReponse(c, http.StatusInternalServerError, "this is on us, please try again")
@@ -273,7 +271,7 @@ func (h *HandlerService) HandleChangePassword(c echo.Context) error {
 		return WriteReponse(c, http.StatusInternalServerError, "this one's on us")
 	}
 
-	go h.redisStore.DelPasswordChangePermission(body.Email)
+	h.redisStore.DelPasswordChangePermission(body.Email)
 
 	return WriteReponse(c, http.StatusOK, "password changed successfully")
 }
@@ -308,7 +306,6 @@ func (h *HandlerService) CreateAdmin(c echo.Context) error {
 	}
 
 	user := dataprocesslayer.ConvertToAdminDto(thisUser)
-	fmt.Println("user : ", user)
 	return c.JSON(http.StatusOK, user)
 }
 
@@ -412,11 +409,10 @@ func (h *HandlerService) UpdatePermissions(c echo.Context) error {
 	}
 
 	if err := h.store.UserRepo.UpdatePermissions(body.UserId, body.Permissions); err != nil {
-		fmt.Println(err)
 		return WriteReponse(c, http.StatusInternalServerError, "oops, this one's on us")
 	}
 
-	go h.redisStore.DelUser(body.UserId)
+	h.redisStore.DelUser(body.UserId)
 
 	return WriteReponse(c, http.StatusAccepted, "successfully updated users permissions")
 

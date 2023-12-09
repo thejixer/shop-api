@@ -3,7 +3,6 @@ package database
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -193,7 +192,6 @@ func (r *UserRepo) UpdatePermissions(id int, permissions []string) error {
 	`
 
 	_, err := r.db.Exec(query, pq.Array(permissions), id)
-	fmt.Println("err : ", err)
 	if err != nil {
 		return err
 	}

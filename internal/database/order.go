@@ -3,7 +3,6 @@ package database
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"sync"
 
 	"github.com/shopspring/decimal"
@@ -256,7 +255,6 @@ func (r *OrderRepo) QueryOrders(userId int, status string, page, limit int) ([]*
 		countQuery = `SELECT count(id) FROM orders WHERE userId = $1 `
 		countArgs = append(countArgs, userId)
 	} else if !userIdExists && !statusExists {
-		fmt.Println("this is running")
 		query = `SELECT * FROM orders ORDER BY id desc OFFSET $1 ROWS FETCH NEXT $2 ROWS ONLY`
 		args = append(args, page*limit, limit)
 		countQuery = `SELECT count(id) FROM orders`
