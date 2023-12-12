@@ -1,7 +1,5 @@
 .env
 /cmd/bin
-Dockerfile
-docker-compose.yaml
 .air.toml
 /public
 todo
