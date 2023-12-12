@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      dockerfile: dockerfile
+      context: .
+    ports:
+      - 3000:3000
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+  db:
+    image: postgres:14.1-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=shop-api
+    ports:
+      - '5432:5432'
+    user: postgres
+    healthcheck:
+      test: echo 'db.runCommand({serverStatus:1}).ok' | grep 1
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+  redis:
+    image: redis/redis-stack-server:latest
+    restart: always
+    ports:
+      - 6379:6379
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s

@@ -34,7 +34,7 @@ func seedDB(store *database.PostgresStore) {
 func main() {
 
 	env := flag.String("env", "DEV", "enviroment")
-	seed := flag.Bool("seed", false, "seed the db")
+	seed := flag.Bool("seed", true, "seed the db")
 
 	flag.Parse()
 
@@ -55,6 +55,7 @@ func main() {
 		log.Fatal("could not connect to the database: ", err)
 	}
 
+	fmt.Println("seed : ", *seed)
 	if *seed {
 		seedDB(store)
 	}
